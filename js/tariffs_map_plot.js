@@ -94,11 +94,15 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Process CSV Data ---
         const processedData = csvData.map(d => {
             const trumpPct = +d.Trump_Pct;
-            const affectedJobsPct = +d.Affected_Jobs_Pct_of_Total_Votes;
-            const stateName = d.State; // Keep state name for linking
+            const affectedJobsPctRaw = +d.Affected_Jobs_Pct_of_Total_Votes;
+            const stateName = d.State;
             const countyFips = d['County FIPS']; // Get FIPS code
 
-            if (isNaN(trumpPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || affectedJobsPct < 0 || !stateName || !countyFips) {
+            // Handle zero/negative values for log scale - replace with a small positive value
+            const minValueForLog = 0.01; // Represent 0.01%
+            let affectedJobsPct = Math.max(minValueForLog, affectedJobsPctRaw);
+
+            if (isNaN(trumpPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || !stateName || !countyFips) { // No need to check affectedJobsPct < 0 now
                 return null;
             }
 
@@ -161,11 +165,12 @@ document.addEventListener('DOMContentLoaded', function () {
             .domain([0, 100])
             .range([0, scatterWidth]);
 
-        // Y scale: Affected Jobs Pct of Total Votes (Power Scale)
+        // Y scale: Affected Jobs Pct of Total Votes (Log Scale)
+        const yMin = 0.01; // Minimum value for log scale (matching zero replacement)
         const yMax = d3.max(plotData, d => d.affected_jobs_pct);
-        const y = d3.scalePow() // Change to power scale
-            .exponent(0.5) // Use a square root scale (adjust exponent if needed)
-            .domain([0, yMax + (yMax * 0.1)]) // Domain starts from 0
+        const y = d3.scaleLog() // USE LOG SCALE
+            .base(10) // Base 10 for typical log scale
+            .domain([yMin, yMax + (yMax * 0.1)]) // Domain starts from small positive value
             .range([scatterHeight, 0]); // Y scale is inverted for SVG
 
         // --- Tooltip (Now references the one created outside and appended to body) --- 
@@ -212,10 +217,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .style("fill", "#666")
             .style("font-family", "'JetBrains Mono', monospace");
 
-        // Add SPECIFIC horizontal grid lines using the POW scale
-        const yGridValues = [1, 10, 25, 50, 100]; // Keep desired grid lines
-        // Add 0 to the grid values for the baseline if desired
-        if (y.domain()[0] === 0) yGridValues.unshift(0); 
+        // Add SPECIFIC horizontal grid lines using the LOG scale
+        const yGridValues = [1, 10, 25, 50, 100]; // Specific values required
+        // Add 0 to the grid values for the baseline if desired - NO, log can't handle 0
+        // if (y.domain()[0] === 0) yGridValues.unshift(0); 
         
         const yGrid = d3.axisLeft(y)
             .tickValues(yGridValues)
@@ -271,8 +276,8 @@ document.addEventListener('DOMContentLoaded', function () {
            .append("circle")
              .attr("class", d => `county-dot state-${d.state.toLowerCase().replace(/\s+/g, '-')}`) // Add state class
              .attr("cx", d => x(d.trump_pct))
-             // Use the pow scale directly - remove clamp
-             .attr("cy", d => y(d.affected_jobs_pct))
+             // Use the log scale 
+             .attr("cy", d => y(Math.max(yMin, d.affected_jobs_pct))) // Ensure value >= yMin for log scale
              .attr("r", 3)
              .style("fill", "#69b3a2")
              .style("opacity", 0.7)
@@ -291,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Define Color Scales
         const maxAffectedPct = d3.max(plotData, d => d.affected_jobs_pct) || 1; // Default max if no data
-        // Use power scale for color as well for consistency
+        // Use power scale for color again for consistency with visual spacing perception
         grayColorScale = d3.scaleSequential(d3.interpolateGreys)
                              .domain([0, Math.pow(maxAffectedPct, 0.5)]); // Apply exponent to domain max 
         const redInterpolator = d3.interpolateRgb("#fee", "#ef476f"); // Lighter start for red scale
@@ -328,10 +333,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 mapTooltip.style("opacity", 1);
                 const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
                 const stateName = fipsToState[countyFips]; 
-                // Show state name in tooltip
-                mapTooltip.html(stateName || "Unknown State"); 
+                // console.log(`Map Hover: Raw FIPS=${d.id}, Padded FIPS=${countyFips}, State=${stateName}`); // Log hover event
                 
-                // Apply hover style (selected color scale) to all counties of this state, if not selected
+                // Show state name or "No data" in tooltip
+                mapTooltip.html(stateName ? stateName : "No data"); 
+                
+                // Apply hover style (selected color scale) to all counties of this state, if not selected AND stateName exists
                 if (stateName && stateName !== selectedState) {
                     // Use selectedColorScale for hover effect
                     applyCountyStyles(stateName, selectedColorScale); 
@@ -373,11 +380,16 @@ document.addEventListener('DOMContentLoaded', function () {
             .style("stroke-width", "1px") // Consistent stroke width
             .style("pointer-events", "none"); 
 
-        // Add click handler to map background to deselect
-        mapSvg.on("click", function(event) {
-            // Check if the click was on the background (not on a state path)
-            if (event.target === mapSvg.node()) {
-                highlightState(null); // Deselect all
+        // Add click handler to the BODY to deselect state if clicked outside map/plot
+        d3.select("body").on("click", function(event) {
+            // Check if the clicked element is NOT a county path within the map SVG
+            // Use closest() to see if the target or its ancestor is a map county path
+            const targetElement = d3.select(event.target);
+            const isMapCountyClick = targetElement.classed('county') || targetElement.select(function() { return this.closest('.county'); }).node();
+
+            if (!isMapCountyClick) {
+                // console.log("Clicked outside map paths, deselecting...");
+                highlightState(null); // Deselect if click is not on a state path
             }
         });
     }
@@ -404,11 +416,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .classed("selected-state", isSelected) // Apply class immediately
             .transition() 
             .duration(200)
-            .style("fill", d => isSelected(d) ? "#ef476f" : "#ddd") // Correct color for scatter
-            .style("opacity", d => isSelected(d) ? 0.9 : 0.2)
-            .attr("r", d => isSelected(d) ? 5 : 3)
-            .style("stroke", d => isSelected(d) ? "black" : "none")
-            .style("stroke-width", d => isSelected(d) ? 1 : 0);
+             // If a state IS selected, highlight it and dim others.
+             // If NO state is selected (stateName is null), reset ALL to default.
+            .style("fill", d => selectedState === null ? '#69b3a2' : (isSelected(d) ? "#ef476f" : "#ccc")) 
+            .style("opacity", d => selectedState === null ? 0.7 : (isSelected(d) ? 0.9 : 0.5)) // Increased opacity for dimmed points
+            .attr("r", 3) // Keep radius constant
+            .style("stroke", "none") // Ensure no stroke is applied
+            .style("stroke-width", 0);
             
         scatterPoints.filter(isSelected).raise();
 
@@ -428,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const countyInfo = countyDataByFips[countyFips];
                 if (!countyInfo) {
                     console.warn(`applyMapColoring: Data not found for FIPS ${countyFips}`);
-                    return '#eee'; // Revert pink back to neutral gray for missing data
+                    return '#eee'; // Default gray if no data for county
                 }
                 
                 const countyState = countyInfo.state;
