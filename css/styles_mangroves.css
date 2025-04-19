@@ -1,0 +1,595 @@
+/* CSS Variables */
+:root {
+  /* Typography - Title Font Options */
+  /* --title-font: "DM Serif Text", serif;  */
+  
+  /* Sans-serif options for headings */
+  /* --title-font: "Inter", sans-serif; */
+  /* --title-font: "Outfit", sans-serif; */
+  /* --title-font: "Plus Jakarta Sans", sans-serif; */
+  
+  /* Serif options for headings */
+  /* --title-font: "Fraunces", serif; */
+  --title-font: "Newsreader", serif;
+  /* --title-font: "Merriweather", serif; */
+  /* --title-font: "PT Serif", serif; */
+  
+  /* Typography - Body Font Options */
+  /* --body-font: "Noto Serif", serif;  */
+  
+  /* Body text options */
+  /* --body-font: "Source Serif Pro", serif; */
+  /* --body-font: "Literata", serif; */
+  /* --body-font: "Merriweather", serif; */
+  --body-font: "PT Serif", serif;
+  
+  /* UI Font */
+  --ui-font: "Noto Sans", sans-serif;
+  
+  /* Author Font */
+  --author-font: "Lato", sans-serif;
+  
+  /* Font sizes */
+  --base-font-size: 18px;
+  --h1-size: 2.5rem;
+  --h2-size: 1.8rem;
+  --h3-size: 1.5rem;
+  --h4-size: 1.2rem;
+  --body-size: 1.1rem;
+  --small-text: 0.9rem;
+  --author-size: 1.1rem;
+  
+  /* Colors */
+  --text-color: #333;
+  --background-color: #efefef;
+  --content-bg: #efefef;
+  --footer-bg: #f5f5f5;
+  --author-text: #6c757d;
+  --footer-text: #adb5bd;
+  --card-bg: white;
+  --card-shadow: rgba(0, 0, 0, 0.1);
+  
+  /* Layout */
+  --content-width: 800px;
+  --content-padding: 2rem 1rem;
+  --section-spacing: 3rem;
+}
+
+/* Base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* overflow: hidden; */
+  background-color: var(--background-color);
+  font-family: var(--ui-font);
+  font-size: var(--base-font-size);
+  line-height: 1.5;
+  overflow-x: hidden;
+  min-height: 120vh;
+  margin: 0;
+  padding: 0;
+  color: var(--text-color);
+}
+
+/* Typography */
+h1, h2, h3, h4 {
+  font-family: var(--title-font);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: var(--h1-size);
+  margin-bottom: 1.5rem;
+  margin-top: 3rem;
+}
+
+h2 {
+  font-size: var(--h2-size);
+  margin-top: var(--section-spacing);
+  margin-bottom: 1.5rem;
+}
+
+h3 {
+  font-size: var(--h3-size);
+  margin-bottom: 1.2rem;
+}
+
+h4 {
+  font-size: var(--h4-size);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+/* Remove any conflicting styles */
+h1.noto-serif, h2.noto-serif {
+  font-family: var(--title-font) !important;
+}
+
+
+p {
+  font-family: var(--body-font);
+  font-size: var(--body-size);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+/* Author styling */
+.author {
+  margin: 1rem 0 2rem 0;
+  font-family: var(--author-font);
+  font-style: normal;
+  font-weight: 400;
+  /* text-transform: uppercase; */
+  /* letter-spacing: 0.08em; */
+}
+
+.author p {
+  margin: 0;
+  font-family: var(--author-font);
+  color: var(--author-text);
+  font-size: var(--author-size);
+  /* text-transform: uppercase; */
+}
+
+/* Navigation */
+.main-nav {
+  background: var(--card-bg);
+  box-shadow: 0 2px 4px var(--card-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-content {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo {
+  font-family: var(--title-font);
+  font-size: 1.5rem;
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+.nav-links a {
+  margin-left: 2rem;
+  text-decoration: none;
+  color: var(--text-color);
+}
+
+/* Content */
+.content {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: var(--content-padding);
+  background-color: var(--content-bg);
+  position: relative;
+  overflow: visible;
+}
+
+/* More Stories section */
+.more-stories {
+  background: var(--background-color);
+  padding: var(--section-spacing) 0;
+  margin-top: 4rem;
+  width: 100%;
+}
+
+.more-stories .content {
+  max-width: 100%;
+  padding: 0 2rem;
+  background-color: transparent;
+}
+
+.stories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  align-items: start;
+}
+
+.story-card {
+  background: var(--card-bg);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+  border: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+}
+
+.story-card img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  background-color: #000;
+}
+
+.story-card-content {
+  padding: 1rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.story-card h4 {
+  font-size: var(--h4-size);
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.story-card p {
+  margin: 0;
+  font-size: var(--small-text);
+  color: var(--footer-text);
+}
+
+/* Center the "More Stories" heading */
+.more-stories h3 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Footer */
+.footer {
+  min-height: 20vh;
+  background-color: var(--footer-bg);
+  margin-top: 4rem;
+  padding: 2rem 0;
+}
+
+.footer .container {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 1rem;
+  color: var(--footer-text);
+}
+
+.footer p {
+  margin-bottom: 1rem;
+  color: var(--footer-text);
+  font-family: var(--ui-font);
+  font-size: 1rem;
+}
+
+.footer a {
+  color: var(--footer-text);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-bottom-color 0.2s ease-in-out;
+}
+
+.footer a:hover {
+  border-bottom-color: var(--footer-text);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  :root {
+    --base-font-size: 16px;
+    --h1-size: 2rem;
+  }
+  
+  .nav-links {
+    display: none;
+  }
+}
+
+/* Media queries */
+@media (min-width: 1200px) {
+  .article-image {
+    margin: 3rem auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .article-image {
+    margin: 1.5rem 0;
+  }
+  
+  .article-image .caption {
+    font-size: 0.8rem;
+  }
+}
+
+#visualization-container {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%;
+  overflow: hidden;
+  transition: padding-bottom 0.6s ease-out;
+}
+
+.sequence-block.is-fullscreen #visualization-container {
+  height: 100vh;
+  padding-bottom: 0;
+}
+
+/* D3 specific styles */
+.main-svg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.image-layer {
+  width: 100%;
+  height: 100%;
+}
+
+.coastline-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.coastline-path {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.8);
+  stroke-width: 1.5;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Overlay elements */
+.location-label {
+  fill: white;
+  font-size: 24px;
+  font-family: var(--ui-font);
+  transition: font-size 0.3s ease;
+}
+
+.year-label {
+  fill: white;
+  font-family: var(--ui-font);
+  font-size: 32px;
+  font-weight: bold;
+  opacity: 1;
+  transition: font-size 0.3s ease;
+  visibility: visible !important;
+  display: block !important;
+}
+
+.sequence-block.is-fullscreen .year-label {
+  font-size: 96px;
+  font-weight: bold;
+}
+
+.scroll-progress {
+  fill: rgba(255, 255, 255, 0.2);
+}
+
+.scroll-indicator {
+  fill: white;
+}
+
+/* Add these to your existing styles */
+.coastline-toggle .toggle-background {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+}
+
+.coastline-toggle .toggle-background.toggle-active {
+  fill: rgba(255, 255, 255, 0.2);
+  stroke: rgba(255, 255, 255, 0.5);
+}
+
+.coastline-toggle .toggle-text {
+  fill: white;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  user-select: none;
+}
+
+.coastline-toggle:hover .toggle-background {
+  fill: rgba(255, 255, 255, 0.15);
+}
+
+.sequence-block {
+  width: 100%;
+  position: relative;
+  margin: 2rem 0;
+  z-index: 1;
+}
+
+.sequence-container {
+  position: relative;
+  width: 100%;
+}
+
+#visualization-container {
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%;  /* 16:9 aspect ratio */
+  position: relative;
+  overflow: hidden;
+}
+
+/* Fullscreen state */
+.sequence-block.is-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  background: black;
+  z-index: 1000;
+}
+
+.sequence-block.is-fullscreen #visualization-container {
+  height: 100vh;
+  padding-bottom: 0;
+}
+
+.nav-arrow {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  font-size: 2.5rem;
+  cursor: pointer;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  display: none;
+  z-index: 1000;
+}
+
+.nav-up {
+  top: 20px;
+}
+
+.nav-down {
+  bottom: 20px;
+}
+
+.nav-arrow:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Show arrows on hover */
+.sequence-block.is-fullscreen:hover .nav-arrow {
+  opacity: 0.7;
+}
+
+.image-layer image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Add button styles */
+.expand-background {
+  fill: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.expand-icon {
+  fill: none;
+  stroke: white;
+}
+
+.expand-button:hover .expand-background {
+  fill: rgba(255, 255, 255, 0.2);
+}
+
+/* Add these styles for the expand button */
+.expand-button {
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+.expand-button:hover {
+  opacity: 1;
+}
+
+.expand-background {
+  fill: rgba(0, 0, 0, 0.5);
+  stroke: rgba(255, 255, 255, 0.3);
+}
+
+.expand-icon {
+  fill: none;
+  stroke: white;
+  stroke-width: 2;
+}
+
+/* Update the button icon based on state */
+.sequence-block.is-fullscreen .expand-icon {
+  d: path('M5,5 L15,5 L15,15 L5,15 Z M25,5 L35,5 L35,15 L25,15 Z M5,25 L15,25 L15,35 L5,35 Z M25,25 L35,25 L35,35 L25,35 Z');
+}
+
+.expand-collapse-toggle {
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.expand-collapse-toggle:hover {
+  opacity: 1;
+}
+
+.expand-collapse-toggle .toggle-background {
+  fill: rgba(0, 0, 0, 0.4);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+}
+
+.expand-collapse-toggle:hover .toggle-background {
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+/* Much larger text in fullscreen mode */
+.sequence-block.is-fullscreen .location-label {
+  font-size: 48px;  /* Doubled from 24px */
+}
+
+.sequence-block.is-fullscreen .year-label {
+  font-size: 96px;
+  font-weight: bold;
+}
+
+.hint-text {
+  font-size: 14px;
+  font-family: var(--ui-font);
+  opacity: 0.8;
+  transition: font-size 0.3s ease;
+}
+
+/* Larger hint text in fullscreen mode */
+.sequence-block.is-fullscreen .hint-text {
+  font-size: 18px;
+}
+
+.expand-hint {
+  font-size: 14px;
+  font-family: var(--ui-font);
+  opacity: 0.8;
+}
+
+/* Hide in fullscreen mode */
+.sequence-block.is-fullscreen .expand-hint {
+  display: none;
+}
+
+.play-pause-toggle {
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.play-pause-toggle:hover {
+  opacity: 1;
+}
+
+.play-pause-toggle .toggle-background {
+  fill: rgba(0, 0, 0, 0.4);
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+}
+
+.play-pause-toggle:hover .toggle-background {
+  fill: rgba(0, 0, 0, 0.6);
+}

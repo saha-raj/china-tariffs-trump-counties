@@ -1,0 +1,39 @@
+# Project Goals
+- Create an interactive visualization showing the relationship between Trump voting counties and tariff impacts
+- Analyze county-level data to reveal economic patterns in political support
+- Present complex economic and political data in an accessible, engaging format
+- Provide insights into how trade policies affect different voting demographics
+- Build a responsive web interface that works across different devices
+
+# Fundamental Principles
+- Write clean, simple, readable code
+- Implement features in the simplest possible way
+- Keep files small and focused (<200 lines)
+- Test after every meaningful change
+- Focus on core functionality before optimization
+- Use clear, consistent naming
+- Think thoroughly before coding. Write 2-3 reasoning paragraphs.
+- ALWAYS write simple, clean, and modular code.
+- Use clear and easy-to-understand language. Write in short sentences.
+
+# Error Fixing
+- DO NOT JUMP TO CONCLUSIONS! Consider multiple possible causes before deciding.
+- Explain the problem in plain English.
+- Make minimal necessary changes, changing as few lines of code as possible.
+- In case of strange errors, ask the user to perform a web search or consult with other AIs
+
+# Building Process
+- Verify each new feature works by telling the user how to test it.
+- DO NOT write complicated and confusing code. Opt for the simple & modular approach.
+- When not sure what to do, tell the user to perform a web search.
+- Prioritize readability and maintainability over cleverness.
+- Ensure every function and module has a clear purpose and is easy to extend or modify.
+- Test code incrementally to catch errors early rather than debugging large chunks at once.
+
+# Comments
+- ALWAYS try to add more helpful and explanatory comments into our code.
+- NEVER delete old comments – unless they are obviously wrong / obsolete.
+- Include LOTS of explanatory comments in your code. ALWAYS write 
+  descriptive comments that explain why something is done, not just how.
+- Keep comments updated when making changes to prevent confusion.
+- Use consistent comment styles throughout the project to improve readability. 
