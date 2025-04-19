@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     // Define margins, width, and height for the main scatter plot
-    const scatterMargin = { top: 120, right: 30, bottom: 70, left: 60 };
+    const scatterMargin = { top: 80, right: 30, bottom: 70, left: 60 };
     const scatterContainer = document.getElementById('tariff-scatterplot-container');
     const mapContainer = document.getElementById('tariff-map-container');
 
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
      }
 
     const scatterWidth = scatterContainerWidth - scatterMargin.left - scatterMargin.right;
-    const scatterHeight = Math.max(100, 600 - scatterMargin.top - scatterMargin.bottom); // Reduced height to 650, ensure minimum
+    const scatterHeight = Math.max(100, 650 - scatterMargin.top - scatterMargin.bottom); // Reduced height to 650, ensure minimum
 
     // --- SVG Setup ---
     // Scatterplot SVG
@@ -77,13 +77,16 @@ document.addEventListener('DOMContentLoaded', function () {
         .append("div")
         .attr("class", "map-tooltip") // Use a different class 
         .style("opacity", 0)
-        .style("background-color", "rgba(0, 0, 0, 0.7)")
-        .style("color", "white")
-        .style("border-radius", "3px")
-        .style("padding", "5px 8px")
+        // Restore styles to match scatterplot tooltip
+        .style("background-color", "rgba(240, 240, 240, 0.9)") 
+        .style("border", "none") 
+        .style("border-radius", "5px") 
+        .style("padding", "10px") 
         .style("position", "absolute")
         .style("pointer-events", "none")
-        .style("font-size", "11px");
+        .style("font-size", "14px") 
+        .style("color", "#333") 
+        .style("font-family", "var(--ui-font), sans-serif"); // Match UI font
 
     // Load BOTH CSV and TopoJSON data
     Promise.all([
@@ -95,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const processedData = csvData.map(d => {
             const trumpPct = +d.Trump_Pct;
             const affectedJobsPctRaw = +d.Affected_Jobs_Pct_of_Total_Votes;
+            const harrisPct = +d.Harris_Pct; // Read Harris percentage
             const stateName = d.State;
             const countyFips = d['County FIPS']; // Get FIPS code
 
@@ -102,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const minValueForLog = 0.01; // Represent 0.01%
             let affectedJobsPct = Math.max(minValueForLog, affectedJobsPctRaw);
 
-            if (isNaN(trumpPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || !stateName || !countyFips) { // No need to check affectedJobsPct < 0 now
+            if (isNaN(trumpPct) || isNaN(harrisPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || harrisPct < 0 || harrisPct > 100 || !stateName || !countyFips) { // Added checks for harrisPct
                 return null;
             }
 
@@ -111,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 state: stateName,
                 fips: countyFips,
                 trump_pct: trumpPct,
+                harris_pct: harrisPct, // Store harris_pct
                 affected_jobs_pct: affectedJobsPct,
             };
 
@@ -156,6 +161,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let selectedState = null; // Track the currently selected state
     let highlightedCountyPath = null; // Track the map path highlighted by scatterplot click
     let highlightedScatterPoint = null; // Track the scatterplot point highlighted by click
+
+    // Helper function to determine point color based on vote percentage
+    function getPointColor(d) {
+        return d.trump_pct > d.harris_pct ? "#f76369" : "#1b98e0";
+    }
 
     // Function to create the scatterplot
     function createTariffScatterplot(plotData) {
@@ -274,12 +284,12 @@ document.addEventListener('DOMContentLoaded', function () {
         scatterSvg.append("text")
            .attr("class", "y-axis-label") // Add class
            .attr("text-anchor", "start") // Left align
-           .attr("y", -scatterMargin.top + 30) // Position below top edge within the large margin
+           .attr("y", -scatterMargin.top + 20) // Position below top edge within the large margin
            .attr("x", 0) // Align with x=0
            .style("font-size", "16px") // Increase font size
            .style("fill", "#666")
            .style("font-family", "'JetBrains Mono', monospace")
-           .text("Affected Jobs (% of Total Votes)");
+           .text("Affected Jobs (% of Votes Cast in 2024 Presidential Election)");
 
         // Store the selection of points
         scatterPoints = scatterSvg.append('g')
@@ -292,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function () {
              // Use the log scale 
              .attr("cy", d => y(Math.max(yMin, d.affected_jobs_pct))) // Ensure value >= yMin for log scale
              .attr("r", 3)
-             .style("fill", "#69b3a2")
+             .style("fill", d => getPointColor(d)) // Set initial fill based on win %
              .style("opacity", 0.7)
              .on("mouseover", mouseover)
              .on("mousemove", mousemove)
@@ -301,7 +311,10 @@ document.addEventListener('DOMContentLoaded', function () {
              .on("click", function(event, d) {
                  // 0. Reset previously highlighted scatter point (if any)
                  if (highlightedScatterPoint) {
-                     highlightedScatterPoint.style("fill", selectedState === null || highlightedScatterPoint.datum().state.toLowerCase() !== selectedState.toLowerCase() ? '#ccc' : '#ef476f'); // Revert to dimmed or selected state color
+                     // Revert to its original win-based color OR dimmed color if a state is selected
+                     const prevData = highlightedScatterPoint.datum();
+                     const revertColor = selectedState === null ? getPointColor(prevData) : (prevData.state.toLowerCase() === selectedState.toLowerCase() ? '#4a4e69' : '#ccc');
+                     highlightedScatterPoint.style("fill", revertColor);
                       if (!highlightedScatterPoint.classed('selected-state')) { // Only remove stroke if not state-selected
                           highlightedScatterPoint.style("stroke", "none"); 
                       }
@@ -322,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  if (!targetPath.empty()) {
                      targetPath
                          .raise() // Bring path to front
-                         .style("stroke", "#ef476f") // Highlight color
+                         .style("stroke", "#4a4e69") // Use new highlight color
                          .style("stroke-width", "1.5px"); // Highlight width
                      highlightedCountyPath = targetPath; // Store reference
                  } else {
@@ -331,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                  // 3. Highlight the clicked scatter point
                  highlightedScatterPoint = d3.select(this);
-                 highlightedScatterPoint.style("fill", "#ef476f") // Highlight color
+                 highlightedScatterPoint.style("fill", "#4a4e69") // Use new highlight color
                                       .style("stroke", "black") // Add stroke to clicked point too
                                       .style("stroke-width", 1);
 
@@ -352,8 +365,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Use power scale for color again for consistency with visual spacing perception
         grayColorScale = d3.scaleSequential(d3.interpolateGreys)
                              .domain([0, Math.pow(maxAffectedPct, 0.5)]); // Apply exponent to domain max 
-        const redInterpolator = d3.interpolateRgb("#fee", "#ef476f"); // Lighter start for red scale
-        selectedColorScale = d3.scaleSequential(redInterpolator)
+        // Define a purple-based interpolator for the selected state
+        const selectedInterpolator = d3.interpolateRgb("#fee", "#4a4e69"); // New highlight color
+        selectedColorScale = d3.scaleSequential(selectedInterpolator)
                                .domain([0, Math.pow(maxAffectedPct, 0.5)]); // Apply exponent to domain max
 
         const projection = d3.geoAlbersUsa()
@@ -393,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 // Apply hover style (selected color scale) to all counties of this state, if not selected AND stateName exists
                 if (stateName && stateName !== selectedState) {
-                    // Use selectedColorScale for hover effect
+                    // Use selectedColorScale (purple/4a4e69) for hover effect 
                     applyCountyStyles(stateName, selectedColorScale); 
                 }
             })
@@ -453,8 +467,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 // Also deselect scatter point highlight
                 if (highlightedScatterPoint) {
-                     highlightedScatterPoint.style("fill", '#69b3a2').style("stroke", "none"); // Revert to default
-                     highlightedScatterPoint = null;
+                     highlightedScatterPoint.style("fill", d => getPointColor(highlightedScatterPoint.datum())) // Revert to win-based color
+                                          .style("stroke", "none"); 
+                      highlightedScatterPoint = null;
                 }
             }
         });
@@ -464,7 +479,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function highlightState(stateName) {
         // Reset any point-specific highlight first
         if (highlightedScatterPoint) {
-            highlightedScatterPoint.style("fill", '#69b3a2').style("stroke", "none");
+            highlightedScatterPoint.style("fill", d => getPointColor(highlightedScatterPoint.datum())) // Revert to win-based color
+                                 .style("stroke", "none");
             highlightedScatterPoint = null;
         }
         if (highlightedCountyPath) {
@@ -493,9 +509,9 @@ document.addEventListener('DOMContentLoaded', function () {
             .transition() 
             .duration(200)
              // If a state IS selected, highlight it and dim others.
-             // If NO state is selected (stateName is null), reset ALL to default.
-            .style("fill", d => selectedState === null ? '#69b3a2' : (isSelected(d) ? "#ef476f" : "#ccc")) 
-            .style("opacity", d => selectedState === null ? 0.7 : (isSelected(d) ? 0.9 : 0.5)) // Increased opacity for dimmed points
+             // If NO state is selected (stateName is null), reset ALL to default win-based color.
+            .style("fill", d => selectedState === null ? getPointColor(d) : (isSelected(d) ? "#4a4e69" : getPointColor(d))) // Use new highlight color
+            .style("opacity", d => selectedState === null ? 0.7 : (isSelected(d) ? 0.9 : 0.2)) // Reduce opacity for dimmed points back to 0.2
             .attr("r", 3) // Keep radius constant
             .style("stroke", "none") // Ensure no stroke is applied
             .style("stroke-width", 0);
