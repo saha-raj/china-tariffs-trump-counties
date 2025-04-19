@@ -159,15 +159,16 @@ li {
     transform: translateX(-50%);
     padding: 1rem;
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
+    justify-content: center;
     gap: 20px;
 }
 
 /* Map Container Styling */
 #tariff-map-container {
     flex: 1;
-    border: 1px solid #ccc;
+    width: 100%;
+    max-width: 600px;
     height: 400px;
     position: relative;
 }
@@ -175,6 +176,8 @@ li {
 /* Scatterplot Container Styling */
 #tariff-scatterplot-container {
     flex: 2;
+    width: 100%;
+    max-width: 900px;
     position: relative;
 }
 

@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     // Define margins, width, and height for the main scatter plot
-    const scatterMargin = { top: 20, right: 30, bottom: 60, left: 60 };
+    const scatterMargin = { top: 120, right: 30, bottom: 70, left: 60 };
     const scatterContainer = document.getElementById('tariff-scatterplot-container');
     const mapContainer = document.getElementById('tariff-map-container');
 
@@ -25,11 +25,11 @@ document.addEventListener('DOMContentLoaded', function () {
         scatterContainerWidth = parentWidth * (2 / 3) - 10; // Account for gap
     }
      if (mapContainerHeight === 0) {
-        mapContainerHeight = 800; // Fallback height
+        mapContainerHeight = 400; // Default/Fallback map height
      }
 
     const scatterWidth = scatterContainerWidth - scatterMargin.left - scatterMargin.right;
-    const scatterHeight = Math.max(100, 500 - scatterMargin.top - scatterMargin.bottom); // Ensure minimum height
+    const scatterHeight = Math.max(100, 600 - scatterMargin.top - scatterMargin.bottom); // Reduced height to 650, ensure minimum
 
     // --- SVG Setup ---
     // Scatterplot SVG
@@ -165,26 +165,72 @@ document.addEventListener('DOMContentLoaded', function () {
              } 
         };
 
-        scatterSvg.append("g")
+        // --- Axes & Gridlines ---
+        // Add X axis
+        const xAxisGroup = scatterSvg.append("g") // Store axis group for later styling
+           .attr("class", "x-axis") // Add class for styling
            .attr("transform", `translate(0,${scatterHeight})`)
-           .call(d3.axisBottom(x).tickFormat(d => `${d}%`));
+           .call(d3.axisBottom(x).tickFormat(d => `${d}%`)); // Format as percentage
 
-        scatterSvg.append("g")
-           .call(d3.axisLeft(y).tickFormat(d => `${d.toFixed(1)}%`));
+        // Style X axis ticks
+        xAxisGroup.selectAll("text")
+            .style("font-size", "12px") // Increase font size
+            .style("fill", "#666")
+            .style("font-family", "'JetBrains Mono', monospace");
 
+        // REMOVE Y axis line and ticks
+        // svg.append("g")
+        //    .call(d3.axisLeft(y).tickFormat(d => `${d.toFixed(1)}%`)); 
+
+        // Add horizontal grid lines at specific values
+        const yGridValues = [25, 50, 75, 100];
+        const yGrid = d3.axisLeft(y)
+            .tickValues(yGridValues)
+            .tickSize(-scatterWidth)
+            .tickFormat(d => `${d.toFixed(0)}%`); 
+
+        const yGridGroup = scatterSvg.append("g") // Store grid group
+           .attr("class", "grid y-grid")
+           .call(yGrid)
+           .call(g => g.select(".domain").remove()); // Remove the Y axis domain line explicitly
+           
+        // Style y-axis grid labels
+        yGridGroup.selectAll(".tick text")
+           .style("text-anchor", "end")
+           .attr("dx", "-0.5em") // Position slightly left of grid line start
+           .style("font-size", "12px") 
+           .style("fill", "#666")
+           .style("font-family", "'JetBrains Mono', monospace");
+
+        // Style y-axis grid lines (ensure previous styling remains)
+        yGridGroup.selectAll(".tick line")
+             .style("stroke", "#e0e0e0") 
+             .style("stroke-dasharray", "2,2");
+
+        // Ensure X-axis domain line is visible (default behavior, but check styles)
+        xAxisGroup.select(".domain").style("stroke", "#ccc"); // Explicitly set color if needed
+
+        // --- Axis Labels ---
+        // X axis label
         scatterSvg.append("text")
-           .attr("text-anchor", "end")
-           .attr("x", scatterWidth / 2 + scatterMargin.left / 2)
-           .attr("y", scatterHeight + scatterMargin.top + 20)
-           .style("font-size", "12px")
+           .attr("class", "x-axis-label") // Add class for potential CSS styling
+           .attr("text-anchor", "middle") // Center the label
+           .attr("x", scatterWidth / 2) // Center horizontally relative to plot width
+           .attr("y", scatterHeight + scatterMargin.bottom - 5) // Position below X axis using bottom margin
+           .style("font-size", "16px") // Increase font size
+           .style("fill", "#666")
+           .style("font-family", "'JetBrains Mono', monospace")
            .text("Trump Vote Percentage (2024)");
 
+        // Y axis label - Repositioned and restyled
         scatterSvg.append("text")
-           .attr("text-anchor", "end")
-           .attr("transform", "rotate(-90)")
-           .attr("y", -scatterMargin.left + 20)
-           .attr("x", -scatterHeight / 2 + scatterMargin.bottom / 3)
-           .style("font-size", "12px")
+           .attr("class", "y-axis-label") // Add class
+           .attr("text-anchor", "start") // Left align
+           .attr("y", -scatterMargin.top + 30) // Position below top edge within the large margin
+           .attr("x", 0) // Align with x=0
+           .style("font-size", "16px") // Increase font size
+           .style("fill", "#666")
+           .style("font-family", "'JetBrains Mono', monospace")
            .text("Affected Jobs (% of Total Votes)");
 
         // Store the selection of points
