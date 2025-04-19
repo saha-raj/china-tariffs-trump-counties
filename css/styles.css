@@ -177,7 +177,7 @@ li {
 #tariff-scatterplot-container {
     flex: 2;
     width: 100%;
-    max-width: 900px;
+    max-width: 1000px;
     position: relative;
 }
 

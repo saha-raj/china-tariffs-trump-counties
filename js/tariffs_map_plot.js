@@ -94,12 +94,36 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Process CSV Data ---
         const processedData = csvData.map(d => {
             const trumpPct = +d.Trump_Pct;
-            const affectedJobsPct = +d.Affected_Jobs_Pct_of_Total_Votes;
+            const affectedJobsPctRaw = +d.Affected_Jobs_Pct_of_Total_Votes;
             const stateName = d.State; // Keep state name for linking
 
-            if (isNaN(trumpPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || affectedJobsPct < 0 || !stateName) {
+            if (isNaN(trumpPct) || isNaN(affectedJobsPctRaw) || trumpPct < 0 || trumpPct > 100 || affectedJobsPctRaw < 0 || !stateName) {
                 return null;
             }
+
+            let affectedJobsPct;
+
+            // Check for NaN immediately after conversion
+            if (isNaN(trumpPct) || isNaN(affectedJobsPctRaw)) {
+                // console.warn(`Skipping row due to invalid initial numeric data:`, d);
+                return null; 
+            }
+
+            // Use the percentage value directly
+            affectedJobsPct = affectedJobsPctRaw;
+
+            // Handle zero values for log scale - replace with a small positive value
+            const minValueForLog = 0.01; // Represent 0.01%
+            if (affectedJobsPct <= 0) {
+                affectedJobsPct = minValueForLog;
+            }
+
+            // Validation: Check if final values are valid numbers and within reasonable ranges
+            if (isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 /* removed affectedJobsPct < 0 check as it's handled */) { 
+                // console.warn(`Skipping row due to invalid or out-of-range final numeric data:`, d);
+                return null;
+            }
+
             return {
                 county: d.County,
                 state: stateName,
@@ -129,10 +153,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .domain([0, 100])
             .range([0, scatterWidth]);
 
-        const yMax = d3.max(plotData, d => d.affected_jobs_pct);
-        const y = d3.scaleLinear()
-            .domain([0, yMax + (yMax * 0.1)])
-            .range([scatterHeight, 0]);
+        // Y scale: Affected Jobs Pct of Total Votes (Log Scale)
+        const yMin = 0.01; // Minimum value for log scale (matching zero replacement)
+        const yMax = d3.max(plotData, d => d.affected_jobs_pct); 
+        const y = d3.scaleLog() // Change to log scale
+            .domain([yMin, yMax + (yMax * 0.1)]) // Domain starts from small positive value
+            .range([scatterHeight, 0]) // Y scale is inverted for SVG
+            .base(10); // Explicitly set base 10
 
         // --- Tooltip (Now references the one created outside and appended to body) --- 
         // const tooltip = d3.select("#tariff-scatterplot-container .tooltip") // REMOVED selection from here
@@ -178,37 +205,30 @@ document.addEventListener('DOMContentLoaded', function () {
             .style("fill", "#666")
             .style("font-family", "'JetBrains Mono', monospace");
 
-        // REMOVE Y axis line and ticks
-        // svg.append("g")
-        //    .call(d3.axisLeft(y).tickFormat(d => `${d.toFixed(1)}%`)); 
-
-        // Add horizontal grid lines at specific values
-        const yGridValues = [25, 50, 75, 100];
+        // Add SPECIFIC horizontal grid lines using the log scale
+        const yGridValues = [1, 10, 25, 50, 100]; // Specific values required
         const yGrid = d3.axisLeft(y)
             .tickValues(yGridValues)
-            .tickSize(-scatterWidth)
-            .tickFormat(d => `${d.toFixed(0)}%`); 
+            .tickSize(-scatterWidth) // Lines across the plot
+            .tickFormat(d => `${d}%`); // Format as percentage
 
-        const yGridGroup = scatterSvg.append("g") // Store grid group
+        const yGridGroup = scatterSvg.append("g") 
            .attr("class", "grid y-grid")
            .call(yGrid)
-           .call(g => g.select(".domain").remove()); // Remove the Y axis domain line explicitly
+           .call(g => g.select(".domain").remove()); // Remove the axis domain line itself
            
-        // Style y-axis grid labels
+        // Style y-axis grid LABELS
         yGridGroup.selectAll(".tick text")
            .style("text-anchor", "end")
-           .attr("dx", "-0.5em") // Position slightly left of grid line start
+           .attr("dx", "-0.5em") 
            .style("font-size", "12px") 
            .style("fill", "#666")
            .style("font-family", "'JetBrains Mono', monospace");
 
-        // Style y-axis grid lines (ensure previous styling remains)
+        // Style y-axis grid LINES
         yGridGroup.selectAll(".tick line")
              .style("stroke", "#e0e0e0") 
              .style("stroke-dasharray", "2,2");
-
-        // Ensure X-axis domain line is visible (default behavior, but check styles)
-        xAxisGroup.select(".domain").style("stroke", "#ccc"); // Explicitly set color if needed
 
         // --- Axis Labels ---
         // X axis label
@@ -241,7 +261,8 @@ document.addEventListener('DOMContentLoaded', function () {
            .append("circle")
              .attr("class", d => `county-dot state-${d.state.toLowerCase().replace(/\s+/g, '-')}`) // Add state class
              .attr("cx", d => x(d.trump_pct))
-             .attr("cy", d => y(d.affected_jobs_pct))
+             // Clamp cy value to prevent points going below the x-axis due to log scale precision
+             .attr("cy", d => Math.min(scatterHeight, y(d.affected_jobs_pct)))
              .attr("r", 3)
              .style("fill", "#69b3a2")
              .style("opacity", 0.7)
