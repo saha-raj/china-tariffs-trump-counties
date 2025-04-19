@@ -1,0 +1,375 @@
+NAICS,NAICS_TITLE,State,Total_Employment
+486100,Pipeline Transportation of Crude Oil,Alaska,720.0
+486100,Pipeline Transportation of Crude Oil,California,330.0
+486100,Pipeline Transportation of Crude Oil,Georgia,70.0
+486100,Pipeline Transportation of Crude Oil,Illinois,390.0
+486100,Pipeline Transportation of Crude Oil,Mississippi,130.0
+486100,Pipeline Transportation of Crude Oil,Montana,140.0
+486100,Pipeline Transportation of Crude Oil,Ohio,1310.0
+486100,Pipeline Transportation of Crude Oil,Oklahoma,150.0
+486100,Pipeline Transportation of Crude Oil,Texas,6470.0
+486100,Pipeline Transportation of Crude Oil,Wyoming,210.0
+324000,Petroleum and Coal Products Manufacturing,Alabama,2240.0
+324000,Petroleum and Coal Products Manufacturing,Arizona,290.0
+324000,Petroleum and Coal Products Manufacturing,California,11170.0
+324000,Petroleum and Coal Products Manufacturing,Connecticut,280.0
+324000,Petroleum and Coal Products Manufacturing,Delaware,750.0
+324000,Petroleum and Coal Products Manufacturing,Florida,3220.0
+324000,Petroleum and Coal Products Manufacturing,Georgia,1380.0
+324000,Petroleum and Coal Products Manufacturing,Hawaii,380.0
+324000,Petroleum and Coal Products Manufacturing,Illinois,5540.0
+324000,Petroleum and Coal Products Manufacturing,Indiana,3920.0
+324000,Petroleum and Coal Products Manufacturing,Iowa,340.0
+324000,Petroleum and Coal Products Manufacturing,Kansas,2700.0
+324000,Petroleum and Coal Products Manufacturing,Kentucky,990.0
+324000,Petroleum and Coal Products Manufacturing,Louisiana,10790.0
+324000,Petroleum and Coal Products Manufacturing,Maine,480.0
+324000,Petroleum and Coal Products Manufacturing,Maryland,740.0
+324000,Petroleum and Coal Products Manufacturing,Massachusetts,1130.0
+324000,Petroleum and Coal Products Manufacturing,Michigan,1810.0
+324000,Petroleum and Coal Products Manufacturing,Minnesota,2060.0
+324000,Petroleum and Coal Products Manufacturing,Mississippi,2720.0
+324000,Petroleum and Coal Products Manufacturing,Missouri,1540.0
+324000,Petroleum and Coal Products Manufacturing,Montana,1490.0
+324000,Petroleum and Coal Products Manufacturing,Nevada,370.0
+324000,Petroleum and Coal Products Manufacturing,New Hampshire,300.0
+324000,Petroleum and Coal Products Manufacturing,New Jersey,2740.0
+324000,Petroleum and Coal Products Manufacturing,New York,1730.0
+324000,Petroleum and Coal Products Manufacturing,North Carolina,810.0
+324000,Petroleum and Coal Products Manufacturing,Ohio,5470.0
+324000,Petroleum and Coal Products Manufacturing,Oklahoma,2330.0
+324000,Petroleum and Coal Products Manufacturing,Oregon,580.0
+324000,Petroleum and Coal Products Manufacturing,Pennsylvania,5030.0
+324000,Petroleum and Coal Products Manufacturing,South Carolina,650.0
+324000,Petroleum and Coal Products Manufacturing,Texas,22910.0
+324000,Petroleum and Coal Products Manufacturing,Utah,1950.0
+324000,Petroleum and Coal Products Manufacturing,Vermont,80.0
+324000,Petroleum and Coal Products Manufacturing,Virginia,1060.0
+324000,Petroleum and Coal Products Manufacturing,Washington,3080.0
+324000,Petroleum and Coal Products Manufacturing,West Virginia,440.0
+324000,Petroleum and Coal Products Manufacturing,Wisconsin,500.0
+324000,Petroleum and Coal Products Manufacturing,Wyoming,940.0
+324000,Petroleum and Coal Products Manufacturing,Puerto Rico,870.0
+324100,Petroleum and Coal Products Manufacturing,Alabama,2240.0
+324100,Petroleum and Coal Products Manufacturing,Arizona,290.0
+324100,Petroleum and Coal Products Manufacturing,California,11170.0
+324100,Petroleum and Coal Products Manufacturing,Connecticut,280.0
+324100,Petroleum and Coal Products Manufacturing,Delaware,750.0
+324100,Petroleum and Coal Products Manufacturing,Florida,3220.0
+324100,Petroleum and Coal Products Manufacturing,Georgia,1380.0
+324100,Petroleum and Coal Products Manufacturing,Hawaii,380.0
+324100,Petroleum and Coal Products Manufacturing,Illinois,5540.0
+324100,Petroleum and Coal Products Manufacturing,Indiana,3920.0
+324100,Petroleum and Coal Products Manufacturing,Iowa,340.0
+324100,Petroleum and Coal Products Manufacturing,Kansas,2700.0
+324100,Petroleum and Coal Products Manufacturing,Kentucky,990.0
+324100,Petroleum and Coal Products Manufacturing,Louisiana,10790.0
+324100,Petroleum and Coal Products Manufacturing,Maine,480.0
+324100,Petroleum and Coal Products Manufacturing,Maryland,740.0
+324100,Petroleum and Coal Products Manufacturing,Massachusetts,1130.0
+324100,Petroleum and Coal Products Manufacturing,Michigan,1810.0
+324100,Petroleum and Coal Products Manufacturing,Minnesota,2060.0
+324100,Petroleum and Coal Products Manufacturing,Mississippi,2720.0
+324100,Petroleum and Coal Products Manufacturing,Missouri,1540.0
+324100,Petroleum and Coal Products Manufacturing,Montana,1490.0
+324100,Petroleum and Coal Products Manufacturing,Nevada,370.0
+324100,Petroleum and Coal Products Manufacturing,New Hampshire,300.0
+324100,Petroleum and Coal Products Manufacturing,New Jersey,2740.0
+324100,Petroleum and Coal Products Manufacturing,New York,1730.0
+324100,Petroleum and Coal Products Manufacturing,North Carolina,810.0
+324100,Petroleum and Coal Products Manufacturing,Ohio,5470.0
+324100,Petroleum and Coal Products Manufacturing,Oklahoma,2330.0
+324100,Petroleum and Coal Products Manufacturing,Oregon,580.0
+324100,Petroleum and Coal Products Manufacturing,Pennsylvania,5030.0
+324100,Petroleum and Coal Products Manufacturing,South Carolina,650.0
+324100,Petroleum and Coal Products Manufacturing,Texas,22910.0
+324100,Petroleum and Coal Products Manufacturing,Utah,1950.0
+324100,Petroleum and Coal Products Manufacturing,Vermont,80.0
+324100,Petroleum and Coal Products Manufacturing,Virginia,1060.0
+324100,Petroleum and Coal Products Manufacturing,Washington,3080.0
+324100,Petroleum and Coal Products Manufacturing,West Virginia,440.0
+324100,Petroleum and Coal Products Manufacturing,Wisconsin,500.0
+324100,Petroleum and Coal Products Manufacturing,Wyoming,940.0
+324100,Petroleum and Coal Products Manufacturing,Puerto Rico,870.0
+221200,Natural Gas Distribution,Alabama,1390.0
+221200,Natural Gas Distribution,Alaska,360.0
+221200,Natural Gas Distribution,Arizona,1140.0
+221200,Natural Gas Distribution,Arkansas,1330.0
+221200,Natural Gas Distribution,California,38350.0
+221200,Natural Gas Distribution,Connecticut,810.0
+221200,Natural Gas Distribution,Delaware,160.0
+221200,Natural Gas Distribution,Florida,1900.0
+221200,Natural Gas Distribution,Georgia,2460.0
+221200,Natural Gas Distribution,Hawaii,360.0
+221200,Natural Gas Distribution,Idaho,260.0
+221200,Natural Gas Distribution,Illinois,4570.0
+221200,Natural Gas Distribution,Indiana,1320.0
+221200,Natural Gas Distribution,Iowa,440.0
+221200,Natural Gas Distribution,Kansas,1550.0
+221200,Natural Gas Distribution,Kentucky,750.0
+221200,Natural Gas Distribution,Louisiana,1050.0
+221200,Natural Gas Distribution,Maine,130.0
+221200,Natural Gas Distribution,Maryland,730.0
+221200,Natural Gas Distribution,Massachusetts,3210.0
+221200,Natural Gas Distribution,Michigan,2480.0
+221200,Natural Gas Distribution,Minnesota,1380.0
+221200,Natural Gas Distribution,Mississippi,580.0
+221200,Natural Gas Distribution,Missouri,2660.0
+221200,Natural Gas Distribution,Montana,370.0
+221200,Natural Gas Distribution,Nebraska,700.0
+221200,Natural Gas Distribution,New Jersey,5340.0
+221200,Natural Gas Distribution,New Mexico,940.0
+221200,Natural Gas Distribution,New York,4070.0
+221200,Natural Gas Distribution,North Carolina,2050.0
+221200,Natural Gas Distribution,North Dakota,80.0
+221200,Natural Gas Distribution,Ohio,5610.0
+221200,Natural Gas Distribution,Oklahoma,2660.0
+221200,Natural Gas Distribution,Oregon,1280.0
+221200,Natural Gas Distribution,Pennsylvania,4850.0
+221200,Natural Gas Distribution,South Carolina,540.0
+221200,Natural Gas Distribution,South Dakota,190.0
+221200,Natural Gas Distribution,Tennessee,590.0
+221200,Natural Gas Distribution,Texas,8320.0
+221200,Natural Gas Distribution,Utah,470.0
+221200,Natural Gas Distribution,Virginia,1830.0
+221200,Natural Gas Distribution,Washington,770.0
+221200,Natural Gas Distribution,West Virginia,920.0
+221200,Natural Gas Distribution,Wisconsin,880.0
+221200,Natural Gas Distribution,Wyoming,350.0
+486200,Pipeline Transportation of Natural Gas,Alabama,490.0
+486200,Pipeline Transportation of Natural Gas,Arkansas,310.0
+486200,Pipeline Transportation of Natural Gas,California,560.0
+486200,Pipeline Transportation of Natural Gas,Connecticut,0.0
+486200,Pipeline Transportation of Natural Gas,Florida,290.0
+486200,Pipeline Transportation of Natural Gas,Georgia,450.0
+486200,Pipeline Transportation of Natural Gas,Illinois,480.0
+486200,Pipeline Transportation of Natural Gas,Indiana,310.0
+486200,Pipeline Transportation of Natural Gas,Iowa,290.0
+486200,Pipeline Transportation of Natural Gas,Kansas,1010.0
+486200,Pipeline Transportation of Natural Gas,Kentucky,800.0
+486200,Pipeline Transportation of Natural Gas,Louisiana,1910.0
+486200,Pipeline Transportation of Natural Gas,Michigan,1000.0
+486200,Pipeline Transportation of Natural Gas,Minnesota,220.0
+486200,Pipeline Transportation of Natural Gas,Mississippi,580.0
+486200,Pipeline Transportation of Natural Gas,Missouri,150.0
+486200,Pipeline Transportation of Natural Gas,Montana,360.0
+486200,Pipeline Transportation of Natural Gas,Nebraska,90.0
+486200,Pipeline Transportation of Natural Gas,Nevada,30.0
+486200,Pipeline Transportation of Natural Gas,New Jersey,150.0
+486200,Pipeline Transportation of Natural Gas,New Mexico,550.0
+486200,Pipeline Transportation of Natural Gas,New York,280.0
+486200,Pipeline Transportation of Natural Gas,North Dakota,1120.0
+486200,Pipeline Transportation of Natural Gas,Ohio,580.0
+486200,Pipeline Transportation of Natural Gas,Oklahoma,2480.0
+486200,Pipeline Transportation of Natural Gas,Pennsylvania,1740.0
+486200,Pipeline Transportation of Natural Gas,South Dakota,90.0
+486200,Pipeline Transportation of Natural Gas,Tennessee,250.0
+486200,Pipeline Transportation of Natural Gas,Texas,13890.0
+486200,Pipeline Transportation of Natural Gas,Virginia,450.0
+486200,Pipeline Transportation of Natural Gas,West Virginia,910.0
+486200,Pipeline Transportation of Natural Gas,Wyoming,600.0
+212100,Coal Mining,Alabama,2530.0
+212100,Coal Mining,Illinois,1970.0
+212100,Coal Mining,Indiana,2020.0
+212100,Coal Mining,Kentucky,3710.0
+212100,Coal Mining,Maryland,170.0
+212100,Coal Mining,Montana,0.0
+212100,Coal Mining,New Mexico,680.0
+212100,Coal Mining,North Dakota,1230.0
+212100,Coal Mining,Ohio,380.0
+212100,Coal Mining,Pennsylvania,4470.0
+212100,Coal Mining,Texas,1180.0
+212100,Coal Mining,West Virginia,13610.0
+212100,Coal Mining,Wyoming,3820.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Alabama,1440.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Arizona,1090.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Arkansas,2760.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,California,6850.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Connecticut,310.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Delaware,310.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Florida,3550.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Georgia,3490.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Hawaii,60.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Idaho,1920.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Illinois,10980.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Indiana,3650.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Iowa,5920.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Kansas,3950.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Kentucky,2200.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Louisiana,1630.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Maine,390.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Maryland,760.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Massachusetts,430.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Michigan,2480.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Minnesota,4690.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Mississippi,1660.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Missouri,4100.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Montana,1260.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Nebraska,4450.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Nevada,310.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,New Hampshire,210.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,New Jersey,710.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,New Mexico,350.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,New York,2040.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,North Carolina,3680.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,North Dakota,3010.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Ohio,3990.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Oklahoma,1470.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Oregon,1540.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Pennsylvania,2900.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Rhode Island,40.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,South Carolina,890.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,South Dakota,2320.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Tennessee,2420.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Texas,8920.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Utah,560.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Vermont,200.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Virginia,1440.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Washington,2440.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,West Virginia,150.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Wisconsin,4510.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Wyoming,420.0
+423820,Farm and Garden Machinery and Equipment Merchant Wholesalers,Puerto Rico,100.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Alabama,3570.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Alaska,170.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Arizona,3810.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Arkansas,2630.0
+444200,Lawn and Garden Equipment and Supplies Retailers,California,12780.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Connecticut,2810.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Delaware,610.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Florida,9150.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Georgia,5720.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Hawaii,220.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Idaho,1770.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Illinois,4230.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Indiana,4880.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Iowa,1690.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Kansas,2230.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Kentucky,3090.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Louisiana,3130.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Maine,1460.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Maryland,3710.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Massachusetts,3770.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Michigan,7560.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Minnesota,3020.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Mississippi,3200.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Missouri,5460.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Montana,770.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Nebraska,1470.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Nevada,1400.0
+444200,Lawn and Garden Equipment and Supplies Retailers,New Hampshire,1580.0
+444200,Lawn and Garden Equipment and Supplies Retailers,New Jersey,3540.0
+444200,Lawn and Garden Equipment and Supplies Retailers,New Mexico,1140.0
+444200,Lawn and Garden Equipment and Supplies Retailers,New York,9270.0
+444200,Lawn and Garden Equipment and Supplies Retailers,North Carolina,7390.0
+444200,Lawn and Garden Equipment and Supplies Retailers,North Dakota,820.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Ohio,9090.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Oklahoma,3430.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Oregon,3130.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Pennsylvania,8260.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Rhode Island,450.0
+444200,Lawn and Garden Equipment and Supplies Retailers,South Carolina,3280.0
+444200,Lawn and Garden Equipment and Supplies Retailers,South Dakota,1260.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Tennessee,5020.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Texas,16670.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Utah,2380.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Vermont,1040.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Virginia,6280.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Washington,4250.0
+444200,Lawn and Garden Equipment and Supplies Retailers,West Virginia,1590.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Wisconsin,3920.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Wyoming,1050.0
+444200,Lawn and Garden Equipment and Supplies Retailers,Puerto Rico,620.0
+23,Construction,Alabama,103640.0
+23,Construction,Alaska,17810.0
+23,Construction,Arizona,220080.0
+23,Construction,Arkansas,66240.0
+23,Construction,California,920740.0
+23,Construction,Connecticut,64200.0
+23,Construction,Delaware,24180.0
+23,Construction,District of Columbia,14210.0
+23,Construction,Florida,647860.0
+23,Construction,Georgia,225630.0
+23,Construction,Hawaii,37220.0
+23,Construction,Idaho,69480.0
+23,Construction,Illinois,242280.0
+23,Construction,Indiana,167260.0
+23,Construction,Iowa,87880.0
+23,Construction,Kansas,70350.0
+23,Construction,Kentucky,92730.0
+23,Construction,Louisiana,136330.0
+23,Construction,Maine,35340.0
+23,Construction,Maryland,162150.0
+23,Construction,Massachusetts,174670.0
+23,Construction,Michigan,196970.0
+23,Construction,Minnesota,141740.0
+23,Construction,Mississippi,50010.0
+23,Construction,Missouri,146690.0
+23,Construction,Montana,38250.0
+23,Construction,Nebraska,62440.0
+23,Construction,Nevada,110150.0
+23,Construction,New Hampshire,32490.0
+23,Construction,New Jersey,165110.0
+23,Construction,New Mexico,53530.0
+23,Construction,New York,393460.0
+23,Construction,North Carolina,270470.0
+23,Construction,North Dakota,29120.0
+23,Construction,Ohio,248090.0
+23,Construction,Oklahoma,84950.0
+23,Construction,Oregon,116940.0
+23,Construction,Pennsylvania,263020.0
+23,Construction,Rhode Island,22340.0
+23,Construction,South Carolina,115630.0
+23,Construction,South Dakota,29610.0
+23,Construction,Tennessee,162120.0
+23,Construction,Texas,835520.0
+23,Construction,Utah,139090.0
+23,Construction,Vermont,16530.0
+23,Construction,Virginia,217290.0
+23,Construction,Washington,215740.0
+23,Construction,West Virginia,34330.0
+23,Construction,Wisconsin,142100.0
+23,Construction,Wyoming,23630.0
+23,Construction,Guam,9970.0
+23,Construction,Puerto Rico,35940.0
+23,Construction,Virgin Islands,2260.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Alabama,4490.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Arizona,980.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Arkansas,2350.0
+336200,Motor Vehicle Body and Trailer Manufacturing,California,7040.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Florida,2950.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Georgia,7970.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Idaho,1940.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Illinois,3980.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Indiana,40750.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Iowa,6500.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Kansas,1490.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Kentucky,4720.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Louisiana,680.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Maryland,130.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Massachusetts,370.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Michigan,8090.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Minnesota,2330.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Mississippi,1330.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Missouri,2660.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Montana,490.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Nebraska,1810.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Nevada,230.0
+336200,Motor Vehicle Body and Trailer Manufacturing,New Hampshire,100.0
+336200,Motor Vehicle Body and Trailer Manufacturing,New Jersey,660.0
+336200,Motor Vehicle Body and Trailer Manufacturing,New York,1110.0
+336200,Motor Vehicle Body and Trailer Manufacturing,North Carolina,5030.0
+336200,Motor Vehicle Body and Trailer Manufacturing,North Dakota,400.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Ohio,9620.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Oklahoma,3040.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Oregon,2780.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Pennsylvania,6250.0
+336200,Motor Vehicle Body and Trailer Manufacturing,South Carolina,2080.0
+336200,Motor Vehicle Body and Trailer Manufacturing,South Dakota,2680.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Tennessee,3150.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Texas,11220.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Utah,1650.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Virginia,3130.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Washington,910.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Wisconsin,4950.0
+336200,Motor Vehicle Body and Trailer Manufacturing,Wyoming,120.0

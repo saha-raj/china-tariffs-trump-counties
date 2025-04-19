@@ -1292,3 +1292,91 @@ video {
     border-color: transparent !important;
     outline: 0 !important;
 }
+
+/* Second Visualization Container */
+#employment-viz-container {
+    display: flex; /* Make it a flex container too */
+    align-items: flex-start; /* Align items to top */
+    gap: 20px; /* Space between filters and chart */
+}
+
+/* Filters Container Styling */
+#employment-filters {
+    flex: 1; /* Takes 1/4 width approx */
+    max-width: 600px; /* Set specific max-width */
+    padding: 15px;
+    border: none; /* Remove border */
+    border-radius: 4px;
+    background-color: transparent; /* Remove background */
+    align-self: center; /* Explicitly center vertically */
+}
+
+#employment-filters .filter-button {
+    display: block; /* Make button full width */
+    width: 100%;
+    padding: 10px 15px; /* Increase padding */
+    margin-bottom: 15px;
+    border: none; /* Remove border */
+    border-radius: 6px; /* Slightly more rounded */
+    background-color: var(--primary-btn); /* Use theme color */
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+#employment-filters .filter-button:hover {
+    background-color: var(--primary-btn-hover); /* Use theme hover color */
+    transform: translateY(-1px); /* Subtle lift effect */
+}
+
+#employment-filters .filter-button:active {
+    transform: translateY(0px); /* Press effect */
+}
+
+.naics-checkbox-container { /* Rename this class if desired */
+    /* Remove previous styling like border/height/overflow */
+    /* Default block layout will stack divs vertically */
+    display: flex; /* Use flexbox for layout */
+    flex-wrap: wrap; /* Allow items to wrap */
+    gap: 8px; /* Space between filter options */
+}
+
+.filter-option {
+    padding: 6px 12px;
+    /* border: 1px solid #ddd; */
+    border-radius: 4px; /* Slightly rounded rectangle */
+    cursor: pointer;
+    font-size: 14px; /* Even Larger font */
+    transition: all 0.2s ease-in-out;
+    background-color: #f8f9fa; /* Default light background */
+    color: #c7ccdb; /* Default lighter text */
+    display: inline-block; /* Fit width to content */
+    /* margin-bottom: 5px; */ /* Gap handles spacing now */
+    /* text-align: center; */ /* Remove text centering */
+}
+
+.filter-option.active {
+    background-color: #edf2f4; /* Light blue background for active */
+    color: #495057; /* Darker blue text for active */
+    /* border-color: none;  */
+    font-weight: 500;
+}
+
+.filter-option:hover {
+    background-color: #e9ecef; /* Subtle hover */
+    color: #495057;
+}
+
+.filter-option.active:hover {
+     background-color: #edf2f4; /* Slightly darker blue on hover when active */
+}
+
+/* Barchart Container Styling */
+#employment-barchart {
+    flex: 3; /* Takes 3/4 width approx */
+    max-width: 1000px; /* Set specific max-width */
+    position: relative; /* For potential internal elements */
+    min-width: 0; /* Prevent flex item from overflowing */
+}
