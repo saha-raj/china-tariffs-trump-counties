@@ -1311,28 +1311,46 @@ video {
     align-self: center; /* Explicitly center vertically */
 }
 
-#employment-filters .filter-button {
-    display: block; /* Make button full width */
-    width: 100%;
-    padding: 10px 15px; /* Increase padding */
+/* Container for filter buttons */
+#employment-filters .button-container {
+    display: flex;
+    gap: 10px;
     margin-bottom: 15px;
-    border: none; /* Remove border */
-    border-radius: 6px; /* Slightly more rounded */
-    background-color: var(--primary-btn); /* Use theme color */
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 0.2s, transform 0.1s;
 }
 
-#employment-filters .filter-button:hover {
-    background-color: var(--primary-btn-hover); /* Use theme hover color */
+/* General Filter Button Style */
+#employment-filters .filter-button {
+     display: block; 
+     flex: 1; /* Make buttons share space */
+     padding: 10px 15px; /* Increase padding */
+    /* margin-bottom: 15px; */ /* Now handled by button container */
+     border: none; /* Remove border */
+     border-radius: 6px; /* Slightly more rounded */
+     background-color: #6c757d; /* Default gray */
+     color: white;
+     font-weight: 600;
+     font-size: 13px; /* Slightly smaller button text */
+     cursor: pointer;
+     text-align: center;
+     transition: background-color 0.2s, transform 0.1s;
+ }
+ 
+ #employment-filters .filter-button:hover {
+    background-color: #5a6268; /* Darker gray on hover */
     transform: translateY(-1px); /* Subtle lift effect */
+ }
+ 
+ #employment-filters .filter-button:active {
+     transform: translateY(0px); /* Press effect */
+ }
+ 
+/* Specific style for the toggle button when active (multi-select) */
+#toggle-select-mode.mode-active {
+    background-color: var(--primary-btn); /* Blue when multi-select is active */
 }
 
-#employment-filters .filter-button:active {
-    transform: translateY(0px); /* Press effect */
+#toggle-select-mode.mode-active:hover {
+    background-color: var(--primary-btn-hover); /* Darker blue on hover */
 }
 
 .naics-checkbox-container { /* Rename this class if desired */
