@@ -60,17 +60,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const scatterTooltip = d3.select("body") 
         .append("div")
         .attr("class", "tooltip") // Keep the tooltip class for styling
-        .style("opacity", 0)
+        .style("opacity", 0) // Start hidden
         .style("position", "absolute") 
         .style("pointer-events", "none") 
-        .style("background-color", "white")
-        .style("border", "solid")
-        .style("border-width", "1px")
-        .style("border-radius", "5px")
-        .style("padding", "10px")
+        .style("background-color", "rgba(240, 240, 240, 0.9)") // Semi-transparent light gray bg
+        .style("border", "none") // Remove border
+        .style("border-radius", "5px") // Keep radius
+        .style("padding", "10px") // Keep padding
         .style("min-width", "150px")
         .style("z-index", "10") 
-        .style("font-size", "12px");
+        .style("font-size", "14px") // Larger font size
+        .style("color", "#333"); // Dark gray text color
 
     // Create a div for the MAP tooltip (initially hidden)
     const mapTooltip = d3.select("body") // Append to body to avoid clipping issues
@@ -154,6 +154,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let grayColorScale; // Grayscale for unselected
     let selectedColorScale; // Color scale for selected state
     let selectedState = null; // Track the currently selected state
+    let highlightedCountyPath = null; // Track the map path highlighted by scatterplot click
+    let highlightedScatterPoint = null; // Track the scatterplot point highlighted by click
 
     // Function to create the scatterplot
     function createTariffScatterplot(plotData) {
@@ -181,25 +183,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // --- Event Handlers for Tooltip ---
         const mouseover = function(event, d) {
+            // if (tooltip.empty()) return; // Use scatterTooltip instead
             scatterTooltip.style("opacity", 1); // Use scatterTooltip
-            // Don't change radius/stroke on hover if it's part of a selected state
-            if (!d3.select(this).classed('selected-state')) {
-                d3.select(this).attr("r", 5).style("stroke", "black");
+            // Only apply hover effect if it's not the currently clicked point
+            if (this !== highlightedScatterPoint?.node()) {
+                // Don't change radius/stroke on hover if it's part of a selected state
+                if (!d3.select(this).classed('selected-state')) {
+                    d3.select(this).attr("r", 5).style("stroke", "black");
+                }
             }
         };
 
         const mousemove = function(event, d) {
-            // const [pointerX, pointerY] = d3.pointer(event, scatterSvg.node().parentNode); // No longer needed
-            scatterTooltip // Use scatterTooltip
-                .html(`State: ${d.state}<br>County: ${d.county}<br>Trump Vote: ${d.trump_pct.toFixed(1)}%<br>Affected Jobs (% Votes): ${d.affected_jobs_pct.toFixed(2)}%`)
+            // if (tooltip.empty()) return; // Use scatterTooltip instead
+            if (scatterTooltip.style("opacity") === "0") return; // Don't update if hidden
+             // console.log("Mousemove - Data:", d); // Log data for debugging
+             scatterTooltip // Use scatterTooltip
+                // Add <strong> tags for bold values
+                .html(`State: <strong>${d.state}</strong><br>
+                       County: <strong>${d.county}</strong><br>
+                       Trump Vote: <strong>${d.trump_pct.toFixed(1)}%</strong><br>
+                       Affected Jobs (% Votes): <strong>${d.affected_jobs_pct.toFixed(2)}%</strong>`)
                 .style("left", (event.pageX + 15) + "px") // Use pageX for body-relative positioning
                 .style("top", (event.pageY - 28) + "px"); // Use pageY for body-relative positioning
         };
 
         const mouseout = function(event, d) {
+             // if (tooltip.empty()) return; // Use scatterTooltip instead
              scatterTooltip.style("opacity", 0); // Use scatterTooltip
-             // Only reset styles if not currently selected by map click
-             if (!d3.select(this).classed('selected-state')) {
+             // Only reset styles if not the currently clicked point AND not selected by map
+             if (this !== highlightedScatterPoint?.node() && !d3.select(this).classed('selected-state')) {
                  d3.select(this).attr("r", 3).style("stroke", "none");
              } 
         };
@@ -283,7 +296,47 @@ document.addEventListener('DOMContentLoaded', function () {
              .style("opacity", 0.7)
              .on("mouseover", mouseover)
              .on("mousemove", mousemove)
-             .on("mouseout", mouseout);
+             .on("mouseout", mouseout)
+             // Add click listener to highlight county on map
+             .on("click", function(event, d) {
+                 // 0. Reset previously highlighted scatter point (if any)
+                 if (highlightedScatterPoint) {
+                     highlightedScatterPoint.style("fill", selectedState === null || highlightedScatterPoint.datum().state.toLowerCase() !== selectedState.toLowerCase() ? '#ccc' : '#ef476f'); // Revert to dimmed or selected state color
+                      if (!highlightedScatterPoint.classed('selected-state')) { // Only remove stroke if not state-selected
+                          highlightedScatterPoint.style("stroke", "none"); 
+                      }
+                 }
+
+                 // 1. Reset previously highlighted county path (if any)
+                 if (highlightedCountyPath) {
+                     highlightedCountyPath
+                         .style("stroke", "#fff")
+                         .style("stroke-width", "0.2px");
+                     highlightedCountyPath = null;
+                 }
+
+                 // 2. Find and highlight the corresponding county path on the map
+                 const countyFips = String(Number(d.fips)).padStart(5, '0');
+                 const targetPath = mapPaths.filter(mapData => String(Number(mapData.id)).padStart(5, '0') === countyFips);
+
+                 if (!targetPath.empty()) {
+                     targetPath
+                         .raise() // Bring path to front
+                         .style("stroke", "#ef476f") // Highlight color
+                         .style("stroke-width", "1.5px"); // Highlight width
+                     highlightedCountyPath = targetPath; // Store reference
+                 } else {
+                     console.warn(`Map path not found for FIPS: ${countyFips}`);
+                 }
+
+                 // 3. Highlight the clicked scatter point
+                 highlightedScatterPoint = d3.select(this);
+                 highlightedScatterPoint.style("fill", "#ef476f") // Highlight color
+                                      .style("stroke", "black") // Add stroke to clicked point too
+                                      .style("stroke-width", 1);
+
+                 event.stopPropagation(); // Prevent click bubbling to body listener
+             });
     }
 
     // Function to create the map
@@ -390,12 +443,35 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!isMapCountyClick) {
                 // console.log("Clicked outside map paths, deselecting...");
                 highlightState(null); // Deselect if click is not on a state path
+
+                // Also deselect any county highlighted by scatterplot click
+                if (highlightedCountyPath) {
+                    highlightedCountyPath
+                        .style("stroke", "#fff")
+                        .style("stroke-width", "0.2px");
+                    highlightedCountyPath = null;
+                }
+                // Also deselect scatter point highlight
+                if (highlightedScatterPoint) {
+                     highlightedScatterPoint.style("fill", '#69b3a2').style("stroke", "none"); // Revert to default
+                     highlightedScatterPoint = null;
+                }
             }
         });
     }
 
     // Function to highlight points and map counties for a selected state
     function highlightState(stateName) {
+        // Reset any point-specific highlight first
+        if (highlightedScatterPoint) {
+            highlightedScatterPoint.style("fill", '#69b3a2').style("stroke", "none");
+            highlightedScatterPoint = null;
+        }
+        if (highlightedCountyPath) {
+            highlightedCountyPath.style("stroke", "#fff").style("stroke-width", "0.2px");
+            highlightedCountyPath = null;
+        }
+
         // console.log(`Highlighting state: ${stateName}`); // Keep commented out unless debugging
         if (!scatterPoints || !mapPaths || !countyDataByFips) {
             console.error("HighlightState called before elements or data were ready.");
