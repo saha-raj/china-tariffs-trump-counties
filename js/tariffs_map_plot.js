@@ -318,7 +318,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // yAxis = d3.axisLeft(y)
             //     .ticks(5) // Suggest number of ticks
             //     .tickFormat(d3.format(",")); // Format as comma-separated numbers
-            yGridValues = [100, 1000, 5000, 10000, 50000]; // Specific values for total log scale
+            // yGridValues = [10, 100, 1000, 10000, 100000]; // Specific values for total log scale
+            yGridValues = [50, 500, 5000, 50000]; // Specific values for total log scale
             yAxis = d3.axisLeft(y)
                 .tickValues(yGridValues)
                 .tickFormat(d3.format(",")); // Format as comma-separated numbers

@@ -1460,9 +1460,27 @@ video {
     display: flex;
     align-items: center;
     justify-content: space-between; /* Pushes logo left, text right */
-    padding: 1rem 0; /* Add some vertical padding */
-    margin-bottom: 4rem; /* Space below header */
-    border-bottom: 1px solid var(--border-color); /* Optional separator */
+    padding: 1rem 0 2rem; /* Increased bottom padding to add space above the line */
+    margin-bottom: 5rem; /* Space below header */
+    /* border-bottom: 1px solid var(--border-color); */ /* Optional separator */
+    /* border-bottom: 1px dotted #778da9; */ /* Replaced with pseudo-element */
+    position: relative; /* Needed for absolute positioning of ::after */
+}
+
+/* Add pseudo-element for custom dotted line */
+.site-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; /* Position at the bottom of the header */
+    left: 0;
+    width: 100%;
+    height: 1px; /* Thickness of the line */
+    /* Create a repeating pattern: 1px color (#778da9), 5px transparent */
+    background-image: linear-gradient(to right, #778da9 2px, transparent 2px);
+    background-size: 7px 2px; /* 1px dot + 5px space = 6px total width for repeat */
+    background-repeat: repeat-x;
+    background-position: left bottom;
+
 }
 
 .header-logo {
@@ -1473,5 +1491,17 @@ video {
 .header-nav-text {
     font-family: 'JetBrains Mono', monospace; /* Use a monospace font like in the image */
     font-size: 1rem; /* Adjust size as needed */
-    color: var(--text-color);
+    /* color: var(--text-color); */ /* Removed direct color setting */
+    color: #778da9; /* Set default color for non-link text (slashes) */
+}
+
+/* Style the link within the nav text */
+.header-nav-text a {
+    color: #778da9; /* Default link color */
+    text-decoration: none; /* Remove underline */
+    transition: color 0.2s ease-in-out; /* Smooth transition */
+}
+
+.header-nav-text a:hover {
+    color: #415a78; /* Hover color */
 }
