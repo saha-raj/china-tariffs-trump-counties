@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             .attr("class", "bar")
                             .attr("y", d => y(d.state))
                             .attr("height", y.bandwidth())
-                            .style("fill", "#69b3a2")
+                            .style("fill", "#767b91")
                             .attr("x", 0) // Start at 0
                             .attr("width", 0) // Initial width 0 for transition
                             .transition()

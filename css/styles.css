@@ -1368,7 +1368,7 @@ video {
     cursor: pointer;
     font-size: 14px; /* Even Larger font */
     transition: all 0.2s ease-in-out;
-    background-color: #f8f9fa; /* Default light background */
+    background-color: #F2F4F8; /* Default light background */
     color: #c7ccdb; /* Default lighter text */
     display: inline-block; /* Fit width to content */
     /* margin-bottom: 5px; */ /* Gap handles spacing now */
@@ -1376,15 +1376,15 @@ video {
 }
 
 .filter-option.active {
-    background-color: #edf2f4; /* Light blue background for active */
-    color: #495057; /* Darker blue text for active */
+    background-color: #e1e5ee; /* Light blue background for active */
+    color: #767B91; /* Darker blue text for active */
     /* border-color: none;  */
     font-weight: 500;
 }
 
 .filter-option:hover {
     background-color: #e9ecef; /* Subtle hover */
-    color: #495057;
+    color: #767B91;
 }
 
 .filter-option.active:hover {
@@ -1397,4 +1397,28 @@ video {
     max-width: 1000px; /* Set specific max-width */
     position: relative; /* For potential internal elements */
     min-width: 0; /* Prevent flex item from overflowing */
+}
+
+/* Y-Axis Label Toggle */
+.toggle-option {
+    cursor: pointer;
+    fill: #c7ccdb; /* Blue link color */
+    text-decoration: none;
+    font-size: 0.95em; /* Slightly smaller */
+    
+}
+
+.toggle-option.active {
+    font-weight: normal;
+    text-decoration: none;
+    fill: #2ab7ca; /* Use the default text fill color */
+    cursor: default;
+}
+
+/* Ensure axis labels don't prevent clicks on tspans */
+.y-axis-label {
+    pointer-events: none; /* Disable pointer events on the main label text group */
+}
+.y-axis-label .toggle-option {
+    pointer-events: auto; /* Re-enable pointer events specifically for the toggle options */
 }

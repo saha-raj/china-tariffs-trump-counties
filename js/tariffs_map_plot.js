@@ -56,6 +56,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const mapSvg = mapSvgContainer.append("g")
         .attr("transform", `translate(${mapMargin.left},${mapMargin.top})`);
 
+    // --- Define Projection and Path Generator (Moved outside updateVisualization) ---
+    // Map Projection - Use Albers USA which includes AK and HI appropriately scaled
+    const projection = d3.geoAlbersUsa(); // Define projection here
+    // Path generator - Define here, will set projection fit later
+    const pathGenerator = d3.geoPath().projection(projection);
+
     // Create a div for the SCATTERPLOT tooltip (initially hidden, appended to body)
     const scatterTooltip = d3.select("body") 
         .append("div")
@@ -88,6 +94,24 @@ document.addEventListener('DOMContentLoaded', function () {
         .style("color", "#333") 
         .style("font-family", "var(--ui-font), sans-serif"); // Match UI font
 
+    // --- Global Variables (accessible within functions) ---
+    let scatterPoints; // Variable to hold the scatter points selection
+    let countyDataByFips; // To store county data grouped by FIPS
+    let stateCountyData; // To store county data grouped by state
+    let mapPaths; // Variable to hold the map path selection
+    let grayColorScale; // Grayscale for unselected
+    let selectedColorScale; // Color scale for selected state
+    let selectedState = null; // Track the currently selected state
+    let highlightedCountyPath = null; // Track the map path highlighted by scatterplot click
+    let highlightedScatterPoint = null; // Track the scatterplot point highlighted by click
+    let fipsToState = {}; // FIPS to State lookup
+    let stateFeatures = []; // Store state features
+    let stateHighlightBorder = null; // Store selection for the highlight border path
+    let mapColorMin, mapColorMax; // Moved declaration to outer scope
+    let yAxisMode = 'percentage'; // Added state variable: 'percentage' or 'total'
+    let currentPlotData = []; // Store current processed data
+    let currentUsMapData = null; // Store current map data
+
     // Load BOTH CSV and TopoJSON data
     Promise.all([
         d3.csv('data/tariffs_industries_votes_county.csv'),
@@ -95,16 +119,21 @@ document.addEventListener('DOMContentLoaded', function () {
     ]).then(function([csvData, usMapData]) {
         
         // --- Process CSV Data ---
+        // (Keep data processing logic here as it's needed before visualization)
         const processedData = csvData.map(d => {
             const trumpPct = +d.Trump_Pct;
             const affectedJobsPctRaw = +d.Affected_Jobs_Pct_of_Total_Votes;
             const harrisPct = +d.Harris_Pct; // Read Harris percentage
             const stateName = d.State;
             const countyFips = d['County FIPS']; // Get FIPS code
+            const totalAffectedJobsRaw = +d.Total_Jobs_Affected_by_Tariffs_2024; // *** CORRECTED column name ***
 
             // Handle zero/negative values for log scale - replace with a small positive value
             const minValueForLog = 0.01; // Represent 0.01%
             let affectedJobsPct = Math.max(minValueForLog, affectedJobsPctRaw);
+
+            // Also validate total affected jobs
+            const totalAffectedJobs = isNaN(totalAffectedJobsRaw) ? 0 : totalAffectedJobsRaw;
 
             if (isNaN(trumpPct) || isNaN(harrisPct) || isNaN(affectedJobsPct) || trumpPct < 0 || trumpPct > 100 || harrisPct < 0 || harrisPct > 100 || !stateName || !countyFips) { // Added checks for harrisPct
                 return null;
@@ -117,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 trump_pct: trumpPct,
                 harris_pct: harrisPct, // Store harris_pct
                 affected_jobs_pct: affectedJobsPct,
+                total_jobs_affected_2024: totalAffectedJobs // *** CORRECTED field name ***
             };
 
             return processedEntry;
@@ -133,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log("County data lookup by FIPS populated.");
 
         // Populate FIPS to State lookup map HERE as well
-        fipsToState = {};
+        // fipsToState = {}; // Defined outside now
         processedData.forEach(d => { 
             // Ensure FIPS is a string with leading zero if needed
             const fipsString = String(Number(d.fips)).padStart(5, '0'); // Use consistent padded FIPS
@@ -141,59 +171,97 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         console.log("FIPS to State lookup populated.");
 
-        // --- Create Visualizations ---
-        createTariffScatterplot(processedData);
-        createTariffMap(usMapData, processedData);
+        // --- Store State Features ---
+        stateFeatures = topojson.feature(usMapData, usMapData.objects.states).features;
+        // console.log("State Features:", stateFeatures); // Log to check properties, e.g., d.properties.name
 
-        // Apply initial map coloring (grayscale)
-        highlightState(null);
+        // --- Initial SVG Setup for Highlight Border ---
+        stateHighlightBorder = mapSvg.append("path")
+            .attr("class", "state-highlight-border")
+            .attr("fill", "none")
+            .attr("stroke", "#2a324b") // Dark border color
+            .attr("stroke-width", 1.5)
+            .style("pointer-events", "none") // Ignore mouse events
+            .attr("d", null); // Initially no geometry
+
+        // --- Call the Main Update Function ---
+        currentPlotData = processedData; // Store data globally
+        currentUsMapData = usMapData; // Store map data globally
+        updateVisualization(); // Initial call without arguments
+
+        // Initial map coloring now happens inside updateVisualization
 
     }).catch(function(error) {
         console.error('Error loading data:', error);
     });
 
-    let scatterPoints; // Variable to hold the scatter points selection
-    let countyDataByFips; // To store county data grouped by FIPS
-    let stateCountyData; // To store county data grouped by state
-    let mapPaths; // Variable to hold the map path selection
-    let grayColorScale; // Grayscale for unselected
-    let selectedColorScale; // Color scale for selected state
-    let selectedState = null; // Track the currently selected state
-    let highlightedCountyPath = null; // Track the map path highlighted by scatterplot click
-    let highlightedScatterPoint = null; // Track the scatterplot point highlighted by click
 
-    // Helper function to determine point color based on vote percentage
-    function getPointColor(d) {
-        return d.trump_pct > d.harris_pct ? "#f76369" : "#1b98e0";
-    }
+    // --- Main Function to Create/Update Visualizations ---
+    function updateVisualization() { // No arguments needed, uses global data and mode
+        
+        // --- Scatterplot Logic (Moved from createTariffScatterplot) ---
 
-    // Function to create the scatterplot
-    function createTariffScatterplot(plotData) {
-        // Group data by state for easier lookup later
-        stateCountyData = d3.group(plotData, d => d.state);
+        // Group data by state for easier lookup later (needed for state highlighting)
+        stateCountyData = d3.group(currentPlotData, d => d.state);
         // console.log("Data grouped by state:", stateCountyData);
 
+        // Clear existing axes and points before redrawing (if needed for future updates)
+        scatterSvg.selectAll(".x-axis").remove();
+        scatterSvg.selectAll(".y-axis").remove();
+        scatterSvg.selectAll(".grid").remove();
+        scatterSvg.selectAll(".dot").remove();
+        scatterSvg.selectAll(".x-axis-label").remove();
+        scatterSvg.selectAll(".y-axis-label").remove();
+        scatterSvg.selectAll(".chart-title").remove(); // Remove previous title
+        
+        // Map clearing (paths need to be handled differently)
+        mapSvg.selectAll(".county").remove(); // Remove old county paths
+        mapSvg.selectAll(".state-borders").remove(); // Remove old state borders
+        mapSvg.selectAll(".map-legend").remove(); // Remove old legend
+        
+        // --- Scales (Conditional based on yAxisMode) ---
         const x = d3.scaleLinear()
             .domain([0, 100])
             .range([0, scatterWidth]);
 
-        // Y scale: Affected Jobs Pct of Total Votes (Log Scale)
-        const yMin = 0.01; // Minimum value for log scale (matching zero replacement)
-        const yMax = d3.max(plotData, d => d.affected_jobs_pct);
-        const y = d3.scaleLog() // USE LOG SCALE
-            .base(10) // Base 10 for typical log scale
-            .domain([yMin, yMax + (yMax * 0.1)]) // Domain starts from small positive value
-            .range([scatterHeight, 0]); // Y scale is inverted for SVG
+        // Y scale: Conditional - Log for percentage, Linear for total
+        let y, yMin, yMax;
+        if (yAxisMode === 'percentage') {
+            yMin = 0.01; // Minimum value for log scale (matching zero replacement)
+            yMax = d3.max(currentPlotData, d => d.affected_jobs_pct); 
+            y = d3.scaleLog()
+                .base(10) 
+                .domain([yMin, yMax + (yMax * 0.1)]) 
+                .range([scatterHeight, 0]); 
+        } else { // yAxisMode === 'total'
+            // NEW Log scale for total count
+            yMin = d3.min(currentPlotData, d => d.total_jobs_affected_2024 > 0 ? d.total_jobs_affected_2024 : Infinity);
+            yMin = Math.max(1, yMin); // Ensure min is at least 1
+            yMax = d3.max(currentPlotData, d => d.total_jobs_affected_2024);
+            y = d3.scaleLog()
+                .base(10)
+                .domain([yMin, yMax + (yMax * 0.1)]) // Add padding to max
+                .range([scatterHeight, 0]);
+        }
 
-        // --- Tooltip (Now references the one created outside and appended to body) --- 
-        // const tooltip = d3.select("#tariff-scatterplot-container .tooltip") // REMOVED selection from here
-        //      .style("opacity", 0); 
+        // Color Scale (for map) - Conditional domain
+        if (yAxisMode === 'percentage') {
+            mapColorMin = 0.01;
+            mapColorMax = d3.max(currentPlotData, d => d.affected_jobs_pct);
+        } else {
+            mapColorMin = d3.min(currentPlotData, d => d.total_jobs_affected_2024 > 0 ? d.total_jobs_affected_2024 : Infinity); // CORRECTED field
+            mapColorMax = d3.max(currentPlotData, d => d.total_jobs_affected_2024); // CORRECTED field
+            mapColorMin = Math.max(1, mapColorMin); // Ensure min is at least 1 for log scale stability if used
+        }
 
-        // if (tooltip.empty()) { ... } // REMOVED check
+        // Use log scale for color regardless of mode for better visual differentiation? Try it.
+        selectedColorScale = d3.scaleSequentialLog(d3.interpolateRgb("#FED8E9", "#b5179e")) // Custom Purple Scale
+            .domain([mapColorMin, mapColorMax]); 
+        grayColorScale = d3.scaleSequentialLog(d3.interpolateRgb("#ffffff", "#767b91")) 
+             .domain([mapColorMin, mapColorMax]);
 
-        // --- Event Handlers for Tooltip ---
+        // --- Scatterplot Tooltip Event Handlers ---
         const mouseover = function(event, d) {
-            // if (tooltip.empty()) return; // Use scatterTooltip instead
             scatterTooltip.style("opacity", 1); // Use scatterTooltip
             // Only apply hover effect if it's not the currently clicked point
             if (this !== highlightedScatterPoint?.node()) {
@@ -205,21 +273,18 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         const mousemove = function(event, d) {
-            // if (tooltip.empty()) return; // Use scatterTooltip instead
             if (scatterTooltip.style("opacity") === "0") return; // Don't update if hidden
-             // console.log("Mousemove - Data:", d); // Log data for debugging
              scatterTooltip // Use scatterTooltip
                 // Add <strong> tags for bold values
                 .html(`State: <strong>${d.state}</strong><br>
                        County: <strong>${d.county}</strong><br>
                        Trump Vote: <strong>${d.trump_pct.toFixed(1)}%</strong><br>
-                       Affected Jobs (% Votes): <strong>${d.affected_jobs_pct.toFixed(2)}%</strong>`)
+                       ${yAxisMode === 'percentage' ? 'Affected Jobs (% Votes)' : 'Total Affected Jobs'}: <strong>${yAxisMode === 'percentage' ? d.affected_jobs_pct.toFixed(2)+'%' : d3.format(",")(d.total_jobs_affected_2024)}</strong>`) // Conditional label and value - CORRECTED field
                 .style("left", (event.pageX + 15) + "px") // Use pageX for body-relative positioning
                 .style("top", (event.pageY - 28) + "px"); // Use pageY for body-relative positioning
         };
 
         const mouseout = function(event, d) {
-             // if (tooltip.empty()) return; // Use scatterTooltip instead
              scatterTooltip.style("opacity", 0); // Use scatterTooltip
              // Only reset styles if not the currently clicked point AND not selected by map
              if (this !== highlightedScatterPoint?.node() && !d3.select(this).classed('selected-state')) {
@@ -227,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
              } 
         };
 
-        // --- Axes & Gridlines ---
+        // --- Scatterplot Axes & Gridlines ---
         // Add X axis
         const xAxisGroup = scatterSvg.append("g") // Store axis group for later styling
            .attr("class", "x-axis") // Add class for styling
@@ -240,338 +305,457 @@ document.addEventListener('DOMContentLoaded', function () {
             .style("fill", "#666")
             .style("font-family", "'JetBrains Mono', monospace");
 
-        // Add SPECIFIC horizontal grid lines using the LOG scale
-        const yGridValues = [1, 10, 25, 50, 100]; // Specific values required
-        // Add 0 to the grid values for the baseline if desired - NO, log can't handle 0
-        // if (y.domain()[0] === 0) yGridValues.unshift(0); 
+        // Add Y axis and Gridlines (Conditional)
+        let yAxis, yGridValues;
+        if (yAxisMode === 'percentage') {
+            yGridValues = [0.01, 0.1, 1, 10, 25, 50, 100]; // Specific grid lines for log scale
+            yAxis = d3.axisLeft(y)
+                .tickValues(yGridValues) 
+                .tickFormat(d => d3.format(".2~f")(d) + "%"); // Append % sign
+        } else { // yAxisMode === 'total'
+            // Let D3 choose nice tick values for linear scale - NO, use specific values
+            // yAxis = d3.axisLeft(y)
+            //     .ticks(5) // Suggest number of ticks
+            //     .tickFormat(d3.format(",")); // Format as comma-separated numbers
+            yGridValues = [100, 1000, 5000, 10000, 50000]; // Specific values for total log scale
+            yAxis = d3.axisLeft(y)
+                .tickValues(yGridValues)
+                .tickFormat(d3.format(",")); // Format as comma-separated numbers
+        }
         
-        const yGrid = d3.axisLeft(y)
-            .tickValues(yGridValues)
-            .tickSize(-scatterWidth) // Lines across the plot
-            .tickFormat(d => `${d}%`); // Format as percentage
+        const yGrid = yAxis // Use the same axis definition for grid
+            .tickSize(-scatterWidth); // Lines across the plot
+            // .tickFormat(""); // Remove labels from grid lines themselves
 
-        const yGridGroup = scatterSvg.append("g") 
-           .attr("class", "grid y-grid")
-           .call(yGrid)
-           .call(g => g.select(".domain").remove()); // Remove the axis domain line itself
-           
-        // Style y-axis grid LABELS
-        yGridGroup.selectAll(".tick text")
-           .style("text-anchor", "end")
-           .attr("dx", "-0.5em") 
-           .style("font-size", "12px") 
-           .style("fill", "#666")
-           .style("font-family", "'JetBrains Mono', monospace");
+        const yGridGroup = scatterSvg.append("g") // Store reference to grid group
+            .attr("class", "grid y-grid") // Add class for styling
+            .call(yGrid)
+            .call(g => g.select(".domain").remove()); // Remove the axis line itself
 
-        // Style y-axis grid LINES
-        yGridGroup.selectAll(".tick line")
-             .style("stroke", "#e0e0e0") 
-             .style("stroke-dasharray", "2,2");
+        // Style Y grid axis tick labels (optional adjustment)
+        yGridGroup.selectAll("text")
+            .style("font-size", "12px")
+            .style("fill", "#666")
+            .style("font-family", "'JetBrains Mono', monospace");
 
-        // --- Axis Labels ---
-        // X axis label
+        // Style grid lines
+        scatterSvg.selectAll(".grid line")
+            .style("stroke", "#e0e0e0")
+            .style("stroke-dasharray", "2,2");
+
+        // --- Scatterplot Axis Labels ---
+        // Add X axis label
         scatterSvg.append("text")
-           .attr("class", "x-axis-label") // Add class for potential CSS styling
-           .attr("text-anchor", "middle") // Center the label
-           .attr("x", scatterWidth / 2) // Center horizontally relative to plot width
-           .attr("y", scatterHeight + scatterMargin.bottom - 5) // Position below X axis using bottom margin
-           .style("font-size", "16px") // Increase font size
-           .style("fill", "#666")
-           .style("font-family", "'JetBrains Mono', monospace")
-           .text("Trump Vote Percentage (2024)");
+            .attr("class", "x-axis-label")
+            .attr("text-anchor", "middle")
+            .attr("x", scatterWidth / 2)
+            .attr("y", scatterHeight + scatterMargin.bottom - 25) // Adjust position
+            .style("font-size", "14px")
+            .style("fill", "#333")
+            .style("font-family", "'JetBrains Mono', monospace")
+            .text("Trump Vote Share (2020)");
 
-        // Y axis label - Repositioned and restyled
-        scatterSvg.append("text")
-           .attr("class", "y-axis-label") // Add class
-           .attr("text-anchor", "start") // Left align
-           .attr("y", -scatterMargin.top + 20) // Position below top edge within the large margin
-           .attr("x", 0) // Align with x=0
-           .style("font-size", "16px") // Increase font size
-           .style("fill", "#666")
-           .style("font-family", "'JetBrains Mono', monospace")
-           .text("Affected Jobs (% of Votes Cast in 2024 Presidential Election)");
+        // Add Y axis label - WITH INTERACTIVE TOGGLE --> MOVED TO TITLE
+        // const yLabel = scatterSvg.append("text")
+        //     .attr("class", "y-axis-label")
+        //     .attr("text-anchor", "middle")
+        //     .attr("transform", "rotate(-90)")
+        //     .attr("y", 0 - scatterMargin.left + 15) 
+        //     .attr("x", 0 - (scatterHeight / 2))
+        //     .style("font-size", "14px")
+        //     .style("fill", "#333")
+        //     .style("font-family", "'JetBrains Mono', monospace");
+            // .text("Affected Jobs (% of Total Votes)"); // Old static label
 
-        // Store the selection of points
-        scatterPoints = scatterSvg.append('g')
-           .selectAll("dot")
-           .data(plotData, d => `${d.state}-${d.county}`) // Add key function
-           .enter()
-           .append("circle")
-             .attr("class", d => `county-dot state-${d.state.toLowerCase().replace(/\s+/g, '-')}`) // Add state class
-             .attr("cx", d => x(d.trump_pct))
-             // Use the log scale 
-             .attr("cy", d => y(Math.max(yMin, d.affected_jobs_pct))) // Ensure value >= yMin for log scale
-             .attr("r", 3)
-             .style("fill", d => getPointColor(d)) // Set initial fill based on win %
-             .style("opacity", 0.7)
-             .on("mouseover", mouseover)
-             .on("mousemove", mousemove)
-             .on("mouseout", mouseout)
-             // Add click listener to highlight county on map
-             .on("click", function(event, d) {
-                 // 0. Reset previously highlighted scatter point (if any)
-                 if (highlightedScatterPoint) {
-                     // Revert to its original win-based color OR dimmed color if a state is selected
-                     const prevData = highlightedScatterPoint.datum();
-                     const revertColor = selectedState === null ? getPointColor(prevData) : (prevData.state.toLowerCase() === selectedState.toLowerCase() ? '#4a4e69' : '#ccc');
-                     highlightedScatterPoint.style("fill", revertColor);
-                      if (!highlightedScatterPoint.classed('selected-state')) { // Only remove stroke if not state-selected
-                          highlightedScatterPoint.style("stroke", "none"); 
-                      }
-                 }
+        // Append tspans for the toggle --> MOVED TO TITLE
+        // yLabel.append("tspan").text("Affected Jobs (");
+        // yLabel.append("tspan") ... etc ...
+        // yLabel.append("tspan").text(")");
 
-                 // 1. Reset previously highlighted county path (if any)
-                 if (highlightedCountyPath) {
-                     highlightedCountyPath
-                         .style("stroke", "#fff")
-                         .style("stroke-width", "0.2px");
-                     highlightedCountyPath = null;
-                 }
+        // Add Title (remains the same) --> REPLACED WITH INTERACTIVE TITLE
+        // scatterSvg.append("text")
+        //     .attr("class", "chart-title")
+        //     .attr("x", scatterWidth / 2)
+        //     .attr("y", 0 - scatterMargin.top / 2) // Position above the plot area
+        //     .attr("text-anchor", "middle")
+        //     .style("font-size", "18px")
+        //     .style("font-weight", "600")
+        //     .style("font-family", "var(--title-font)")
+        //     .style("fill", "#333")
+        //     .text("County Tariff Impact vs. 2020 Trump Vote Share");
+            
+        // Add NEW Interactive Title
+        const chartTitle = scatterSvg.append("text")
+            .attr("class", "chart-title-interactive") // New class
+            .attr("x", 0) // Align with Y axis (x=0)
+            .attr("y", 0 - scatterMargin.top / 2) // Position above plot area
+            .attr("text-anchor", "start") // Left align
+            .style("font-size", "16px") // Title font size
+            .style("font-weight", "200") // Title weight
+            .style("font-family", "'JetBrains Mono', monospace") // Use JetBrains Mono
+            .style("fill", "#333")
+            ;
 
-                 // 2. Find and highlight the corresponding county path on the map
-                 const countyFips = String(Number(d.fips)).padStart(5, '0');
-                 const targetPath = mapPaths.filter(mapData => String(Number(mapData.id)).padStart(5, '0') === countyFips);
+        // Append tspans for the toggle to the new title
+        chartTitle.append("tspan").text("Affected Jobs [");
 
-                 if (!targetPath.empty()) {
-                     targetPath
-                         .raise() // Bring path to front
-                         .style("stroke", "#4a4e69") // Use new highlight color
-                         .style("stroke-width", "1.5px"); // Highlight width
-                     highlightedCountyPath = targetPath; // Store reference
-                 } else {
-                     console.warn(`Map path not found for FIPS: ${countyFips}`);
-                 }
-
-                 // 3. Highlight the clicked scatter point
-                 highlightedScatterPoint = d3.select(this);
-                 highlightedScatterPoint.style("fill", "#4a4e69") // Use new highlight color
-                                      .style("stroke", "black") // Add stroke to clicked point too
-                                      .style("stroke-width", 1);
-
-                 event.stopPropagation(); // Prevent click bubbling to body listener
-             });
-    }
-
-    // Function to create the map
-    function createTariffMap(us, plotData) { 
-        const counties = topojson.feature(us, us.objects.counties); // Use counties geometry
-        const statesMesh = topojson.mesh(us, us.objects.states, (a, b) => a !== b); // Interior borders
-        const nationMesh = topojson.mesh(us, us.objects.nation); // Exterior border
-
-        // fipsToState map is now populated in the outer scope
-
-        // Define Color Scales
-        const maxAffectedPct = d3.max(plotData, d => d.affected_jobs_pct) || 1; // Default max if no data
-        // Use power scale for color again for consistency with visual spacing perception
-        grayColorScale = d3.scaleSequential(d3.interpolateGreys)
-                             .domain([0, Math.pow(maxAffectedPct, 0.5)]); // Apply exponent to domain max 
-        // Define a purple-based interpolator for the selected state
-        const selectedInterpolator = d3.interpolateRgb("#fee", "#4a4e69"); // New highlight color
-        selectedColorScale = d3.scaleSequential(selectedInterpolator)
-                               .domain([0, Math.pow(maxAffectedPct, 0.5)]); // Apply exponent to domain max
-
-        const projection = d3.geoAlbersUsa()
-            .fitSize([mapWidth, mapHeight], counties);
-
-        const path = d3.geoPath().projection(projection);
-
-        // Draw the COUNTIES
-        mapPaths = mapSvg.selectAll("path") // Store selection globally
-            .data(counties.features)
-            .enter().append("path")
-            .attr("d", path)
-            .attr("class", "county") // Add class for styling and selection
-            // Initial fill is just a light gray - highlightState will color it later
-            .style("fill", '#eee') 
-            .style("stroke", "#fff") // Keep county borders thin white
-            .style("stroke-width", "0.2px") // Thinner stroke for counties
-            .on("click", function(event, d) {
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const stateName = fipsToState[countyFips]; // Get state name via FIPS lookup
-                console.log(`Map Click: FIPS=${countyFips}, State=${stateName}`); // Log click event
-                if (stateName) {
-                    highlightState(stateName);
-                } else {
-                    console.warn("State not found for FIPS:", countyFips);
-                    highlightState(null); // Deselect if state unknown
-                }
-            })
-            .on("mouseover", function(event, d) {
-                mapTooltip.style("opacity", 1);
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const stateName = fipsToState[countyFips]; 
-                // console.log(`Map Hover: Raw FIPS=${d.id}, Padded FIPS=${countyFips}, State=${stateName}`); // Log hover event
-                
-                // Show state name or "No data" in tooltip
-                mapTooltip.html(stateName ? stateName : "No data"); 
-                
-                // Apply hover style (selected color scale) to all counties of this state, if not selected AND stateName exists
-                if (stateName && stateName !== selectedState) {
-                    // Use selectedColorScale (purple/4a4e69) for hover effect 
-                    applyCountyStyles(stateName, selectedColorScale); 
-                }
-            })
-            .on("mousemove", function(event, d) {
-                mapTooltip
-                    .style("left", (event.pageX + 10) + "px") 
-                    .style("top", (event.pageY + 10) + "px");
-            })
-            .on("mouseout", function(event, d) {
-                mapTooltip.style("opacity", 0);
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const stateName = fipsToState[countyFips]; 
-                // Reset fill for the state if it's not the selected one
-                if (stateName && stateName !== selectedState) {
-                   // Revert to grayscale using grayColorScale explicitly
-                   applyCountyStyles(stateName, grayColorScale); 
+        chartTitle.append("tspan")
+            .attr("class", "toggle-option toggle-percentage")
+            .classed("active", yAxisMode === 'percentage')
+            .text("as % of votes cast")
+            .on("click", () => {
+                if (yAxisMode !== 'percentage') {
+                    yAxisMode = 'percentage';
+                    updateVisualization(); // Redraw
                 }
             });
-        
-        // Draw state borders on top
-        mapSvg.append("path")
-            .datum(statesMesh) // Use interior borders mesh
-            .attr("class", "state-borders-interior")
-            .attr("d", path)
-            .style("fill", "none")
-            .style("stroke", "#dee2e6") // Consistent dark gray stroke 
-            .style("stroke-width", "1px") // Consistent stroke width
-            .style("pointer-events", "none"); 
 
-        // Draw national outline on top of everything
-        mapSvg.append("path")
-            .datum(nationMesh) // Use exterior border mesh
-            .attr("class", "nation-border-exterior")
-            .attr("d", path)
-            .style("fill", "none")
-            .style("stroke", "#adb5bd") // Consistent dark gray stroke
-            .style("stroke-width", "1px") // Consistent stroke width
-            .style("pointer-events", "none"); 
+        chartTitle.append("tspan").text(" or ");
 
-        // Add click handler to the BODY to deselect state if clicked outside map/plot
-        d3.select("body").on("click", function(event) {
-            // Check if the clicked element is NOT a county path within the map SVG
-            // Use closest() to see if the target or its ancestor is a map county path
-            const targetElement = d3.select(event.target);
-            const isMapCountyClick = targetElement.classed('county') || targetElement.select(function() { return this.closest('.county'); }).node();
-
-            if (!isMapCountyClick) {
-                // console.log("Clicked outside map paths, deselecting...");
-                highlightState(null); // Deselect if click is not on a state path
-
-                // Also deselect any county highlighted by scatterplot click
-                if (highlightedCountyPath) {
-                    highlightedCountyPath
-                        .style("stroke", "#fff")
-                        .style("stroke-width", "0.2px");
-                    highlightedCountyPath = null;
+        chartTitle.append("tspan")
+            .attr("class", "toggle-option toggle-total")
+            .classed("active", yAxisMode === 'total')
+            .text("total count")
+            .on("click", () => {
+                if (yAxisMode !== 'total') {
+                    yAxisMode = 'total';
+                    updateVisualization(); // Redraw
                 }
-                // Also deselect scatter point highlight
-                if (highlightedScatterPoint) {
-                     highlightedScatterPoint.style("fill", d => getPointColor(highlightedScatterPoint.datum())) // Revert to win-based color
-                                          .style("stroke", "none"); 
-                      highlightedScatterPoint = null;
+            });
+
+        chartTitle.append("tspan").text("]");
+
+        // --- Scatterplot Points (Dots) ---
+        scatterPoints = scatterSvg.append('g') // Append points to a group
+            .selectAll("circle.dot") // Select circles with class 'dot'
+            .data(currentPlotData, d => d.fips) // Use FIPS as key for object constancy
+            .enter()
+            .append("circle")
+                .attr("class", "dot") // Add class for potential styling/selection
+                .attr("cx", d => x(d.trump_pct))
+                .attr("cy", d => {
+                    if (yAxisMode === 'percentage') {
+                        return y(d.affected_jobs_pct);
+                    } else { // 'total' mode (log scale)
+                        // If total jobs is 0, plot at the bottom (yMin); otherwise use the log scale.
+                        return y(d.total_jobs_affected_2024 === 0 ? yMin : d.total_jobs_affected_2024);
+                    }
+                })
+                .attr("r", 3) // Initial radius
+                .style("fill", d => getPointColor(d)) // Use helper function for color
+                .style("stroke", "none") // No initial stroke
+                .style("opacity", 0.7) // Base opacity
+            .on("mouseover", mouseover)
+            .on("mousemove", mousemove)
+            .on("mouseout", mouseout)
+            // Add click listener to highlight point and corresponding map county
+            .on("click", function(event, d) {
+                // console.log("Scatterplot point clicked:", d);
+                highlightPointAndCounty(this, d.fips);
+                event.stopPropagation(); // Prevent click from bubbling to body
+            });
+            
+
+        // --- Map Logic (Moved from createTariffMap) ---
+
+        // Map Projection - Use Albers USA which includes AK and HI appropriately scaled
+        // const projection = d3.geoAlbersUsa() // MOVED OUTSIDE
+        //     .fitSize([mapWidth, mapHeight], topojson.feature(usMapData, usMapData.objects.counties)); // Fit counties
+        // Fit projection here, now that we have data
+        projection.fitSize([mapWidth, mapHeight], topojson.feature(currentUsMapData, currentUsMapData.objects.counties));
+
+        // Path generator
+        // const pathGenerator = d3.geoPath().projection(projection); // MOVED OUTSIDE
+
+        // --- Map Tooltip Event Handlers --- (Conditional Text)
+        const mapMouseover = function(event, d) {
+            const fips = d.id;
+            const hoveredStateName = fipsToState[fips];
+
+            if (hoveredStateName) {
+                // Update tooltip
+                mapTooltip.style("opacity", 1)
+                          .html(`State: <strong>${hoveredStateName}</strong>`); // Show only state name
+
+                // Apply fill highlight if not selected
+                if (hoveredStateName !== selectedState) {
+                    // Fill counties
+                    mapPaths.filter(p => fipsToState[p.id] === hoveredStateName)
+                        .transition().duration(50) // Faster transition for hover
+                        .attr("fill", p => {
+                            const data = p.properties?.data;
+                            if (!data) return "#eee"; 
+                            const value = yAxisMode === 'percentage' ? data.affected_jobs_pct : data.total_jobs_affected_2024;
+                            const safeValue = (yAxisMode === 'percentage' || value > 0) ? value : mapColorMin; 
+                            return selectedColorScale(safeValue); // Use selected (purple) scale for hover
+                        });
+                    // Add border highlight on hover ONLY if no state is currently selected
+                    if (selectedState === null) {
+                        updateStateHighlightBorder(hoveredStateName);
+                    }
                 }
             }
+        };
+
+        const mapMousemove = function(event, d) {
+             if (mapTooltip.style("opacity") === "0") return;
+             mapTooltip.style("left", (event.pageX + 25) + "px") // Increased offset from 15 to 25
+                     .style("top", (event.pageY - 28) + "px");
+        };
+        
+        const mapMouseout = function(event, d) {
+            mapTooltip.style("opacity", 0);
+            const fips = d.id;
+            const hoveredStateName = fipsToState[fips];
+
+            // Revert the fill highlight if the state exists and is not the selected one
+            if (hoveredStateName && hoveredStateName !== selectedState) {
+                 mapPaths.filter(p => fipsToState[p.id] === hoveredStateName)
+                    .transition().duration(50)
+                    .attr("fill", p => {
+                        const data = p.properties?.data;
+                        if (!data) return "#eee";
+                        const value = yAxisMode === 'percentage' ? data.affected_jobs_pct : data.total_jobs_affected_2024;
+                        const safeValue = (yAxisMode === 'percentage' || value > 0) ? value : mapColorMin;
+                        return grayColorScale(safeValue); // Revert to gray scale
+                    });
+                 // Remove hover border ONLY if no state is currently selected
+                 if (selectedState === null) {
+                    updateStateHighlightBorder(null);
+                 }
+            }
+            // Always revert the highlight border to match the selected state (or none)
+            // updateStateHighlightBorder(selectedState); // This might be redundant now? Let's test without it first.
+            // If the above line *is* needed, it should likely come *after* the conditional removal above.
+            // Let's keep it commented out for now to test the simpler logic.
+        };
+
+        // Draw Counties
+        mapPaths = mapSvg.append("g")
+            .selectAll("path.county")
+            .data(topojson.feature(currentUsMapData, currentUsMapData.objects.counties).features)
+            .enter().append("path")
+            .attr("class", "county") // Add class for styling/selection
+            .attr("d", pathGenerator)
+            .attr("fill", "#eee") // Initial light gray fill
+            .attr("stroke", "#ccc") // Light gray stroke
+            .attr("stroke-width", 0.5)
+            .each(function(d) {
+                // Join CSV data here
+                const fips = d.id; // FIPS is typically the 'id' in US Atlas TopoJSON
+                if (countyDataByFips[fips]) {
+                    d.properties = { ...d.properties, data: countyDataByFips[fips] }; // Add our data to properties
+                } else {
+                    // console.warn(`No data found for county FIPS: ${fips}`);
+                    // Optionally assign default properties or leave empty
+                }
+            })
+            .on("mouseover", mapMouseover)
+            .on("mousemove", mapMousemove)
+            .on("mouseout", mapMouseout)
+            // Add click listener to highlight state and points
+             .on("click", function(event, d) {
+                const fips = d.id;
+                const stateName = fipsToState[fips]; // Use lookup map
+                if (stateName) {
+                    // Toggle state selection
+                    selectedState = (selectedState === stateName) ? null : stateName; 
+                    highlightState(selectedState); // Call the main highlight function
+                } else {
+                    // console.log("Map click - State not found for FIPS:", fips);
+                    // Optionally deselect if clicking outside a known county
+                    selectedState = null;
+                    highlightState(null);
+                    highlightPointAndCounty(null, null); // Deselect highlights
+                }
+                event.stopPropagation(); // Prevent click from bubbling to body
+             });
+
+        // Draw State Borders (optional, but helpful)
+        mapSvg.append("path")
+            .datum(topojson.mesh(currentUsMapData, currentUsMapData.objects.states, (a, b) => a !== b))
+            .attr("class", "state-borders")
+            .attr("fill", "none")
+            .attr("stroke", "#aaa") // Slightly darker state borders
+            .attr("stroke-width", 1)
+            .attr("d", pathGenerator);
+
+        // Draw National Outline (darker)
+        mapSvg.append("path")
+            .datum(topojson.mesh(currentUsMapData, currentUsMapData.objects.nation))
+            .attr("class", "nation-border")
+            .attr("fill", "none")
+            .attr("stroke", "#767b91") // Darker gray for national border
+            .attr("stroke-width", 1) // Reduced thickness from 1.5 to 1
+            .attr("d", pathGenerator);
+
+        // --- Apply Initial Coloring ---
+        // This replaces the call originally made after createTariffMap
+        highlightState(null); // Start with all states deselected (grayscale)
+
+        // --- Add Body Click Listener for Deselection ---
+        d3.select("body").on("click.deselect", function(event) { // Added .deselect namespace
+            // Check if the click target is NOT within the map or scatterplot containers <-- REMOVED THIS CHECK
+            // const mapClicked = event.target.closest('#tariff-map-container svg');
+            // const scatterClicked = event.target.closest('#tariff-scatterplot-container svg');
+            
+            // If clicked outside both SVGs and a state is currently selected <-- SIMPLIFIED CONDITION
+            // If a click reaches the body and a state is selected, deselect it.
+            // Clicks on map paths or scatter points should have been stopped by stopPropagation.
+            if (selectedState !== null) {
+                // console.log("Body click detected, deselecting state...");
+                selectedState = null; // Deselect state
+                highlightState(null); // Reset map/point styles
+                highlightPointAndCounty(null, null); // Reset specific highlights
+            }
         });
+
+    } // --- End of updateVisualization ---
+
+
+    // --- Helper Functions (Can remain outside updateVisualization if they don't rely on its internal scope beyond arguments/globals) ---
+
+    // Helper function to determine point color based on vote percentage
+    function getPointColor(d) {
+        return d.trump_pct > d.harris_pct ? "#f76369" : "#1b98e0";
     }
 
-    // Function to highlight points and map counties for a selected state
+    // Function to handle highlighting state on map and points on scatterplot
     function highlightState(stateName) {
-        // Reset any point-specific highlight first
+        selectedState = stateName; // Update the global selected state
+
+        // Apply coloring to the map counties
+        applyMapColoring(selectedState);
+
+        // Apply styles to scatterplot points
+        scatterPoints.each(function(d) {
+            const point = d3.select(this);
+            const isSelectedState = stateName && d.state === stateName;
+
+            // Check if this point is the one clicked for special highlight
+            const isClickedPoint = highlightedScatterPoint && point.node() === highlightedScatterPoint.node();
+
+            point.classed('selected-state', isSelectedState) // Add/remove class
+                 .transition().duration(300)
+                 .style("opacity", isSelectedState || !stateName ? 0.7 : 0.1) // Dim unselected if a state IS selected
+                 .attr("r", isClickedPoint ? 6 : (isSelectedState ? 4 : 3)) // Make selected state points slightly bigger, clicked point biggest
+                 .style("stroke", isClickedPoint ? "#6a0dad" : "none") // Use purple stroke for clicked point
+                 .style("stroke-width", isClickedPoint ? 2 : 0);
+        });
+        
+        // Update the state highlight border
+        updateStateHighlightBorder(selectedState);
+    }
+    
+    // Function to apply map coloring based on selected state
+    function applyMapColoring(selectedStateName) {
+        if (selectedStateName) {
+            // Color selected state using selectedColorScale, others gray
+            applyCountyStyles(selectedStateName, selectedColorScale);
+        } else {
+            // No state selected, color all using grayColorScale
+            applyCountyStyles(null, grayColorScale); 
+        }
+    }
+
+    // Function to apply fill styles to county paths (Conditional Value)
+    function applyCountyStyles(stateNameToStyle, colorScaleToUse) {
+        mapPaths.transition().duration(500)
+            .attr("fill", d => {
+                const data = d.properties?.data;
+                if (!data) return "#eee"; // Default gray for no data
+
+                const value = yAxisMode === 'percentage' ? data.affected_jobs_pct : data.total_jobs_affected_2024; // Conditional value - CORRECTED field
+                const currentState = data.state;
+
+                // If a specific state is selected, style it differently
+                if (stateNameToStyle) { 
+                    if (currentState === stateNameToStyle) {
+                        return colorScaleToUse(value); // Use the provided color scale (selectedColorScale)
+                    } else {
+                        return grayColorScale(value); // Use grayscale for non-selected states
+                    }
+                } else {
+                    // No state selected, use the provided scale (grayColorScale) for all
+                    // Ensure value is valid for the scale (e.g., non-zero for log)
+                    const safeValue = (yAxisMode === 'percentage' || value > 0) ? value : mapColorMin; // Use min domain value if total is 0 for log scale
+                    return colorScaleToUse(safeValue); 
+                }
+            });
+    }
+
+    // Function to handle highlighting sync between scatter and map on click
+    function highlightPointAndCounty(pointElement, countyFips) {
+        // Reset previous highlights first
         if (highlightedScatterPoint) {
-            highlightedScatterPoint.style("fill", d => getPointColor(highlightedScatterPoint.datum())) // Revert to win-based color
-                                 .style("stroke", "none");
-            highlightedScatterPoint = null;
+            // Reset stroke to none, keep fill and radius based on state selection
+            highlightedScatterPoint.style("stroke", "none")
+                                     .attr("r", d => selectedState && d.state === selectedState ? 4 : 3);
         }
         if (highlightedCountyPath) {
-            highlightedCountyPath.style("stroke", "#fff").style("stroke-width", "0.2px");
-            highlightedCountyPath = null;
+            // Reset stroke to default light gray
+            highlightedCountyPath.style("stroke", "#ccc").style("stroke-width", 0.5);
+        }
+        highlightedScatterPoint = null;
+        highlightedCountyPath = null;
+
+        // Find the corresponding elements
+        let targetPoint = pointElement ? d3.select(pointElement) : null;
+        let targetPath = null;
+
+        if (countyFips) {
+            // Find map path
+            mapPaths.each(function(d) {
+                if (d.id === countyFips) {
+                    targetPath = d3.select(this);
+                }
+            });
+            // Find scatter point if not provided
+            if (!targetPoint) {
+                scatterPoints.each(function(d) {
+                    if (d.fips === countyFips) {
+                        targetPoint = d3.select(this);
+                    }
+                });
+            }
         }
 
-        // console.log(`Highlighting state: ${stateName}`); // Keep commented out unless debugging
-        if (!scatterPoints || !mapPaths || !countyDataByFips) {
-            console.error("HighlightState called before elements or data were ready.");
-            return; 
+        // Apply new highlights
+        if (targetPoint) {
+            // Use purple stroke for highlight
+            targetPoint.style("stroke", "#6a0dad").style("stroke-width", 2).attr("r", 6).raise(); // Bring to front
+            highlightedScatterPoint = targetPoint;
         }
-
-        if (selectedState === stateName) { // Clicked the same state again
-            selectedState = null; // Deselect
-        } else {
-            selectedState = stateName;
+        if (targetPath) {
+            // Use purple stroke for highlight
+            targetPath.style("stroke", "#6a0dad").style("stroke-width", 2).raise(); // Bring to front
+            highlightedCountyPath = targetPath;
         }
+    }
 
-        // Determine which points are selected
-        const isSelected = d => selectedState !== null && d.state.toLowerCase() === selectedState.toLowerCase();
+    // --- NEW Helper Function to draw state border highlight ---
+    function updateStateHighlightBorder(stateNameToHighlight) {
+        if (!stateHighlightBorder || !stateFeatures || !pathGenerator) return; // Safety check
 
-        // Apply styles and transitions
-        scatterPoints
-            .classed("selected-state", isSelected) // Apply class immediately
-            .transition() 
-            .duration(200)
-             // If a state IS selected, highlight it and dim others.
-             // If NO state is selected (stateName is null), reset ALL to default win-based color.
-            .style("fill", d => selectedState === null ? getPointColor(d) : (isSelected(d) ? "#4a4e69" : getPointColor(d))) // Use new highlight color
-            .style("opacity", d => selectedState === null ? 0.7 : (isSelected(d) ? 0.9 : 0.2)) // Reduce opacity for dimmed points back to 0.2
-            .attr("r", 3) // Keep radius constant
-            .style("stroke", "none") // Ensure no stroke is applied
-            .style("stroke-width", 0);
+        if (stateNameToHighlight) {
+            // Find the feature for the state to highlight
+            // Assuming state features have a property like 'name' that matches fipsToState values
+            const featureToDraw = stateFeatures.find(f => f.properties.name === stateNameToHighlight);
             
-        scatterPoints.filter(isSelected).raise();
-
-         // Update map COUNTY colors based on selection
-         applyMapColoring(stateName); // Call helper to apply colors to all counties
+            if (featureToDraw) {
+                stateHighlightBorder.attr("d", pathGenerator(featureToDraw));
+            } else {
+                // console.warn(`State feature not found for: ${stateNameToHighlight}`);
+                stateHighlightBorder.attr("d", null); // Hide if feature not found
+            }
+        } else {
+            // No state to highlight, remove the border
+            stateHighlightBorder.attr("d", null);
+        }
+        
+        // Ensure the border path is drawn on top
+        stateHighlightBorder.raise();
     }
 
-    // Helper function to apply coloring to ALL map counties based on selection
-    function applyMapColoring(selectedStateName) {
-        if (!mapPaths || !countyDataByFips || !grayColorScale || !selectedColorScale || !fipsToState) return;
 
-        mapPaths 
-            .transition()
-            .duration(200)
-            .style("fill", d => { 
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const countyInfo = countyDataByFips[countyFips];
-                if (!countyInfo) {
-                    console.warn(`applyMapColoring: Data not found for FIPS ${countyFips}`);
-                    return '#eee'; // Default gray if no data for county
-                }
-                
-                const countyState = countyInfo.state;
-                const valueForScale = Math.pow(Math.max(0.01, countyInfo.affected_jobs_pct), 0.5); // Use pow(0.5), ensure > 0 for scale
-
-                // Determine fill based on selection state
-                if (selectedStateName !== null && countyState.toLowerCase() === selectedStateName.toLowerCase()) {
-                    // Use selected state color scale
-                    return selectedColorScale(valueForScale);
-                } else {
-                    // Use grayscale for unselected states
-                    return grayColorScale(valueForScale);
-                }
-            });
-    }
-
-    // Helper function to set fill for all counties in a state
-    function applyCountyStyles(stateNameToStyle, colorScaleToUse) {
-        if (!mapPaths || !fipsToState || !countyDataByFips || !colorScaleToUse ) return;
-
-        mapPaths.filter(d => {
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const stateLookup = fipsToState[countyFips];
-                return stateLookup && stateLookup.toLowerCase() === stateNameToStyle.toLowerCase();
-            })
-            .style("fill", d => {
-                const countyFips = String(Number(d.id)).padStart(5, '0'); // Standardize lookup key
-                const countyInfo = countyDataByFips[countyFips];
-                if (!countyInfo) {
-                    console.warn(`applyCountyStyles: Data not found for FIPS ${countyFips} in state ${stateNameToStyle}`);
-                    return '#eee'; // Revert pink back to neutral gray for missing data
-                }
-                
-                const valueForScale = Math.pow(Math.max(0.01, countyInfo.affected_jobs_pct), 0.5); // Use pow(0.5), ensure > 0 for scale
-                
-                return colorScaleToUse(valueForScale); // Apply the passed scale
-            });
-    }
-
-}); 
+}); // End of DOMContentLoaded
