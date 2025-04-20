@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let stateFeatures = []; // Store state features
     let stateHighlightBorder = null; // Store selection for the highlight border path
     let mapColorMin, mapColorMax; // Moved declaration to outer scope
+    let yMin; // Moved yMin declaration to outer scope for access in highlightState
     let yAxisMode = 'percentage'; // Added state variable: 'percentage' or 'total'
     let currentPlotData = []; // Store current processed data
     let currentUsMapData = null; // Store current map data
@@ -224,8 +225,8 @@ document.addEventListener('DOMContentLoaded', function () {
             .domain([0, 100])
             .range([0, scatterWidth]);
 
-        // Y scale: Conditional - Log for percentage, Linear for total
-        let y, yMin, yMax;
+        // Y scale: Conditional - Log for percentage, Log for total
+        let y, yMax; // yMin defined outside now
         if (yAxisMode === 'percentage') {
             yMin = 0.01; // Minimum value for log scale (matching zero replacement)
             yMax = d3.max(currentPlotData, d => d.affected_jobs_pct); 
@@ -631,16 +632,47 @@ document.addEventListener('DOMContentLoaded', function () {
         scatterPoints.each(function(d) {
             const point = d3.select(this);
             const isSelectedState = stateName && d.state === stateName;
-
-            // Check if this point is the one clicked for special highlight
             const isClickedPoint = highlightedScatterPoint && point.node() === highlightedScatterPoint.node();
 
-            point.classed('selected-state', isSelectedState) // Add/remove class
-                 .transition().duration(300)
-                 .style("opacity", isSelectedState || !stateName ? 0.7 : 0.1) // Dim unselected if a state IS selected
-                 .attr("r", isClickedPoint ? 6 : (isSelectedState ? 4 : 3)) // Make selected state points slightly bigger, clicked point biggest
-                 .style("stroke", isClickedPoint ? "#6a0dad" : "none") // Use purple stroke for clicked point
-                 .style("stroke-width", isClickedPoint ? 2 : 0);
+            // Determine if the point represents a zero value for the current Y axis
+            let isZeroValue;
+            if (yAxisMode === 'percentage') {
+                // For log scale %, 0 was mapped to yMin (e.g., 0.01)
+                // Use a small tolerance to account for floating point issues if necessary
+                isZeroValue = d.affected_jobs_pct <= yMin; // Check against the effective minimum
+            } else { // 'total' mode (also log)
+                // For total jobs, we explicitly check for 0
+                isZeroValue = d.total_jobs_affected_2024 === 0;
+            }
+
+            // Determine display based on selection and zero value
+            let displayStyle;
+            if (stateName === null) { // No state selected
+                // Hide zero-value points, show others
+                displayStyle = isZeroValue ? "none" : "block";
+            } else { // A state IS selected
+                // Hide zero-value points only if they are NOT in the selected state
+                displayStyle = (isZeroValue && !isSelectedState) ? "none" : "block";
+            }
+            
+            // Apply display style FIRST
+            point.style("display", displayStyle);
+
+            // Apply visual styles ONLY if the point is displayed
+            if (displayStyle === "block") {
+                 point.classed('selected-state', isSelectedState)
+                     .transition().duration(300)
+                     .style("opacity", isSelectedState || !stateName ? 0.7 : 0.1) // Dim unselected if a state IS selected
+                     .attr("r", isClickedPoint ? 6 : (isSelectedState ? 4 : 3)) 
+                     .style("stroke", isClickedPoint ? "#6a0dad" : "none") 
+                     .style("stroke-width", isClickedPoint ? 2 : 0);
+            } else {
+                 // Ensure hidden points don't retain selected state class or transition artifacts
+                 point.classed('selected-state', false)
+                      .interrupt() // Stop any ongoing transition
+                      .style("opacity", 0); // Ensure fully hidden visually if needed
+                      // Setting display to none should be sufficient, but opacity 0 adds safety
+            }
         });
         
         // Update the state highlight border

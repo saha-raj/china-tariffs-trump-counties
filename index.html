@@ -26,8 +26,34 @@
             </div>
             
             <p>
-                text
+                This article draws heavily on the analysis presented in <a href="https://www.brookings.edu/articles/chinas-retaliatory-tariffs-will-hurt-trump-voting-counties-most/" target="_blank">China's retaliatory tariffs will hurt Trump-voting counties most</a> by Robert Maxim, Mark Muro, and Shriya Methkupally from the Brookings Institution.
             </p>
+
+            <p>
+                China's retaliatory tariffs against the U.S. are projected to hit counties that supported Trump in the 2024 election the hardest. This is, of course, by design.  
+                The original Brookings article identified the industries most vulnerable to these tariffs and mapped them to counties along with 2024 employment figures.
+            </p>
+
+            <p>
+                This article builds on that work by incorporating additional data: the 2024 presidential election outcomes for each county and statewide employment totals in the affected industries, sourced from the <a href='https://www.bls.gov/oes/2024/may/oes_research_estimates.htm'>US Bureau of Labor Statistics</a>.
+            </p>
+
+
+        </div>
+
+        <div class="text-block">
+            <h2>Visualizing the Impact</h2>
+            
+            <p>
+                The visualization below shows the distribution of potentially affected jobs across U.S. counties due to Chinese
+                retaliatory tariffs, along with the relationship between Trump's 2024 vote share and the number of jobs at risk.
+                Counties that gave Trump higher levels of support tend to have more jobs in industries targeted by the retaliatory tariffs.
+            </p>
+
+            <p>
+                As the original article points out, "<strong>two-thirds of all jobs in affected industries reside in Trump-voting counties</strong>"
+            </p>
+
         </div>
 
         <div class="viz-container">
@@ -39,10 +65,19 @@
             </div>
         </div>
 
+        <p class="caption">County Map and relationship between Trump vote share and jobs potentially affected by Chinese tariffs. Select states on the map to see their counties on the scatterplot. 
+            The vertical axis of the scatterplot can be represented both as the total number of jobs in the affected industries and as the percentage of those jobs in proportion to the voting population.
+            Source: <a href = 'https://www.brookings.edu/articles/chinas-retaliatory-tariffs-will-hurt-trump-voting-counties-most/' target="_blank">Affected Jobs by County, Brookings Institution</a>; and <a href = 'https://www.bls.gov/oes/tables.htm' target="_blank">Occupational Employment and Wage Statistics table</a> from the US Bureau of Labor Statistics.
+        </p>
+
         <div class="text-block">
-            <h2>header</h2>
-            
-            <p>text</p>
+            <p>
+                This chart below shows total employment in industries targeted by Chinese tariffs, aggregated at the state level.
+                States with large energy and manufacturing sectors, such as California, Texas, and Florida, have the highest numbers
+                of at-risk jobs.
+                The list of industries on the left can be used to filter the results and view employment patterns within specific
+                sectors like petroleum, natural gas, coal mining, and vehicle manufacturing.
+            </p>
         </div>
 
         <!-- <div class="text-block">
@@ -56,15 +91,29 @@
             </div>
         </div> -->
 
+        <!-- New Visualization Container for Employment Barchart -->
+        <div id="employment-viz-container" class="viz-container">
+            <!-- Filters for NAICS Titles -->
+            <div id="employment-filters"></div>
+            <!-- Barchart Placeholder -->
+            <div id="employment-barchart"></div>
+        </div>
+        
+        <p class="caption">Total employment in industries targeted by Chinese tariffs, by state. Use the industry list on the
+            left to select or
+            deselect sectors and view how specific industries contribute to the totals.
+            Source: <a
+                href='https://www.brookings.edu/articles/chinas-retaliatory-tariffs-will-hurt-trump-voting-counties-most/'
+                target="_blank">Affected Jobs by County, Brookings Institution</a>; and <a
+                href='https://www.bls.gov/oes/tables.htm' target="_blank">Occupational Employment and Wage Statistics table</a>
+            from the US Bureau of Labor Statistics.
+        </p>
+
     </div>
 
-    <!-- New Visualization Container for Employment Barchart -->
-    <div id="employment-viz-container" class="viz-container">
-        <!-- Filters for NAICS Titles -->
-        <div id="employment-filters"></div>
-        <!-- Barchart Placeholder -->
-        <div id="employment-barchart"></div>
-    </div>
+
+
+    <div class="section-divider"></div>
 
     <div id="more-stories-container"></div>
     

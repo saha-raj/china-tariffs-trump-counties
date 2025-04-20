@@ -106,6 +106,18 @@ p {
   color: var(--text-color);
 }
 
+/* Styling for links within content paragraphs */
+.content p a {
+  color: #118ab2; /* Default link color */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.2s ease-in-out; /* Smooth color transition */
+}
+
+.content p a:hover {
+  color: #f28482; /* Hover link color */
+  text-decoration: none; /* Ensure no underline on hover either */
+}
+
 ul, ol {
   font-family: var(--body-font);
   font-size: var(--body-size);
@@ -125,6 +137,8 @@ li {
   font-family: var(--author-font);
   font-style: normal;
   font-weight: 400;
+  margin-bottom: 1rem;
+  color: var(--text-color);
 }
 
 .author p {
@@ -152,7 +166,7 @@ li {
 /* Visualization section (renamed from simulation-container) */
 .viz-container {
     background-color: var(--sim-bg);
-    margin: 2rem 0;
+    margin: 1rem 0rem;
     width: 100vw;
     position: relative;
     left: 50%;
@@ -1405,7 +1419,7 @@ video {
     fill: #c7ccdb; /* Blue link color */
     text-decoration: none;
     font-size: 0.95em; /* Slightly smaller */
-    
+    pointer-events: auto; /* Re-enable pointer events specifically for the toggle options */
 }
 
 .toggle-option.active {
@@ -1421,4 +1435,21 @@ video {
 }
 .y-axis-label .toggle-option {
     pointer-events: auto; /* Re-enable pointer events specifically for the toggle options */
+}
+
+/* Caption Styling */
+.caption {
+  font-size: 0.9rem;
+  color: #999;
+  /* margin-top: 0.20rem; */
+  text-align: left;
+  /* font-style: italic; */
+  max-width: var(--content-width);
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2rem;
+
+  padding-left: 0rem;
+  padding-right: 1rem;
+  box-sizing: border-box;
 }
