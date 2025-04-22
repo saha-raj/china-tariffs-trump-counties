@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const scatterContainer = document.getElementById('tariff-scatterplot-container');
     const mapContainer = document.getElementById('tariff-map-container');
 
+    // Define top padding for the plot area itself to create space below title
+    const plotTopPadding = 40; 
+
     if (!scatterContainer || !mapContainer) {
         console.error("Required container elements not found!");
         return;
@@ -41,6 +44,11 @@ document.addEventListener('DOMContentLoaded', function () {
         
     const scatterSvg = scatterSvgContainer.append("g")
         .attr("transform", `translate(${scatterMargin.left},${scatterMargin.top})`);
+
+    // CREATE ANNOTATION GROUP ONCE HERE
+    const annotationGroup = scatterSvg.append("g")
+                                      .attr("class", "annotations")
+                                      .style("pointer-events", "none");
 
     // Map SVG 
     const mapMargin = { top: 10, right: 10, bottom: 10, left: 10 };
@@ -112,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let yAxisMode = 'percentage'; // Added state variable: 'percentage' or 'total'
     let currentPlotData = []; // Store current processed data
     let currentUsMapData = null; // Store current map data
+    // Define scales globally
+    let x, y;
 
     // Load BOTH CSV and TopoJSON data
     Promise.all([
@@ -214,6 +224,7 @@ document.addEventListener('DOMContentLoaded', function () {
         scatterSvg.selectAll(".x-axis-label").remove();
         scatterSvg.selectAll(".y-axis-label").remove();
         scatterSvg.selectAll(".chart-title").remove(); // Remove previous title
+        // scatterSvg.selectAll(".annotations").remove(); // REMOVE this line - group persists
         
         // Map clearing (paths need to be handled differently)
         mapSvg.selectAll(".county").remove(); // Remove old county paths
@@ -221,28 +232,33 @@ document.addEventListener('DOMContentLoaded', function () {
         mapSvg.selectAll(".map-legend").remove(); // Remove old legend
         
         // --- Scales (Conditional based on yAxisMode) ---
-        const x = d3.scaleLinear()
+        // Update global x scale
+        x = d3.scaleLinear()
             .domain([0, 100])
             .range([0, scatterWidth]);
 
         // Y scale: Conditional - Log for percentage, Log for total
-        let y, yMax; // yMin defined outside now
+        let yMax; // yMin defined outside now
         if (yAxisMode === 'percentage') {
             yMin = 0.01; // Minimum value for log scale (matching zero replacement)
             yMax = d3.max(currentPlotData, d => d.affected_jobs_pct); 
+            // Update global y scale
             y = d3.scaleLog()
                 .base(10) 
                 .domain([yMin, yMax + (yMax * 0.1)]) 
-                .range([scatterHeight, 0]); 
+                .range([scatterHeight, plotTopPadding]); // USE PADDING HERE
         } else { // yAxisMode === 'total'
             // NEW Log scale for total count
             yMin = d3.min(currentPlotData, d => d.total_jobs_affected_2024 > 0 ? d.total_jobs_affected_2024 : Infinity);
             yMin = Math.max(1, yMin); // Ensure min is at least 1
             yMax = d3.max(currentPlotData, d => d.total_jobs_affected_2024);
+            // Update global y scale
+            // Ensure yMax is > yMin and positive for log scale
+            yMax = Math.max(yMax, yMin + 1); 
             y = d3.scaleLog()
                 .base(10)
                 .domain([yMin, yMax + (yMax * 0.1)]) // Add padding to max
-                .range([scatterHeight, 0]);
+                .range([scatterHeight, plotTopPadding]); // USE PADDING HERE
         }
 
         // Color Scale (for map) - Conditional domain
@@ -374,63 +390,102 @@ document.addEventListener('DOMContentLoaded', function () {
         // yLabel.append("tspan") ... etc ...
         // yLabel.append("tspan").text(")");
 
-        // Add Title (remains the same) --> REPLACED WITH INTERACTIVE TITLE
-        // scatterSvg.append("text")
-        //     .attr("class", "chart-title")
-        //     .attr("x", scatterWidth / 2)
-        //     .attr("y", 0 - scatterMargin.top / 2) // Position above the plot area
-        //     .attr("text-anchor", "middle")
-        //     .style("font-size", "18px")
-        //     .style("font-weight", "600")
-        //     .style("font-family", "var(--title-font)")
+        // Add NEW Interactive Title - REMOVED creation from here
+        // const chartTitle = scatterSvg.append("text")
+        //     .attr("class", "chart-title-interactive") // New class
+        //     .attr("x", 0) // Align with Y axis (x=0)
+        //     .attr("y", 0 - scatterMargin.top / 2) // Position above plot area
+        //     .attr("text-anchor", "start") // Left align
+        //     .style("font-size", "16px") // Title font size
+        //     .style("font-weight", "200") // Title weight
+        //     .style("font-family", "'JetBrains Mono', monospace") // Use JetBrains Mono
         //     .style("fill", "#333")
-        //     .text("County Tariff Impact vs. 2020 Trump Vote Share");
-            
-        // Add NEW Interactive Title
-        const chartTitle = scatterSvg.append("text")
-            .attr("class", "chart-title-interactive") // New class
-            .attr("x", 0) // Align with Y axis (x=0)
-            .attr("y", 0 - scatterMargin.top / 2) // Position above plot area
-            .attr("text-anchor", "start") // Left align
-            .style("font-size", "16px") // Title font size
-            .style("font-weight", "200") // Title weight
-            .style("font-family", "'JetBrains Mono', monospace") // Use JetBrains Mono
-            .style("fill", "#333")
-            ;
+        //     ;
 
-        // Append tspans for the toggle to the new title
-        chartTitle.append("tspan").text("Affected Jobs [");
+        // Append tspans for the toggle to the new title - REVISED LOGIC
+        // chartTitle.text(''); // CLEAR ALL PREVIOUS CONTENT (text nodes and tspans)
 
-        chartTitle.append("tspan")
-            .attr("class", "toggle-option toggle-percentage")
-            .classed("active", yAxisMode === 'percentage')
-            .text("as % of votes cast")
-            .on("click", () => {
-                if (yAxisMode !== 'percentage') {
-                    yAxisMode = 'percentage';
-                    updateVisualization(); // Redraw
-                }
-            });
+        // ---- REVISED TITLE LOGIC ----
+        // Remove previous title element completely
+        scatterSvg.selectAll(".chart-title-interactive").remove(); 
 
-        chartTitle.append("tspan").text(" or ");
+        if (yAxisMode === 'percentage') {
+            // Create the new title element for this mode
+            const chartTitle = scatterSvg.append("text")
+                .attr("class", "chart-title-interactive") 
+                .attr("x", 0) 
+                .attr("y", 0 - scatterMargin.top / 2) 
+                .attr("text-anchor", "start") 
+                .style("font-size", "16px") 
+                .style("font-weight", "200") 
+                .style("font-family", "'JetBrains Mono', monospace") 
+                .style("fill", "#333");
 
-        chartTitle.append("tspan")
-            .attr("class", "toggle-option toggle-total")
-            .classed("active", yAxisMode === 'total')
-            .text("total count")
-            .on("click", () => {
-                if (yAxisMode !== 'total') {
-                    yAxisMode = 'total';
-                    updateVisualization(); // Redraw
-                }
-            });
+            // Add content - breaking into styled tspans
+            chartTitle.append('tspan')
+                .style("font-weight", "600") 
+                .text('Affected Jobs as % of votes cast '); // Main part
+            chartTitle.append('tspan') // Gray part
+                .style('fill', '#8d99ae')
+                .text('(switch to ');
+            chartTitle.append('tspan') // Clickable blue part
+                .attr('class', 'toggle-option') 
+                .style('fill', '#8d99ae')
+                .style("font-weight", "600") 
+                .style('cursor', 'pointer') // Add cursor pointer explicitly
+                .text('Total Affected Jobs')
+                .on('click', () => {
+                    if (yAxisMode !== 'total') { 
+                        yAxisMode = 'total'; 
+                        updateVisualization();
+                    }
+                });
+            chartTitle.append('tspan') // Closing gray part
+                .style('fill', '#8d99ae')
+                .text(')'); 
 
-        chartTitle.append("tspan").text("]");
+        } else { // yAxisMode === 'total'
+             // Create the new title element for this mode
+             const chartTitle = scatterSvg.append("text")
+                .attr("class", "chart-title-interactive") 
+                .attr("x", 0) 
+                .attr("y", 0 - scatterMargin.top / 2) 
+                .attr("text-anchor", "start") 
+                .style("font-size", "16px") 
+                .style("font-weight", "200") 
+                .style("font-family", "'JetBrains Mono', monospace") 
+                .style("fill", "#333");
+
+            // Add content - breaking into styled tspans
+            chartTitle.append('tspan')
+                .style("font-weight", "600") 
+                .text('Total Affected Jobs '); // Main part
+            chartTitle.append('tspan') // Gray part
+                .style('fill', '#8d99ae')
+                .text('(switch to ');
+            chartTitle.append('tspan') // Clickable blue part
+                .attr('class', 'toggle-option') 
+                .style('fill', '#8d99ae')
+                .style("font-weight", "600")
+                .style('cursor', 'pointer') // Add cursor pointer explicitly
+                .text('Affected Jobs as % of votes cast')
+                .on('click', () => {
+                     if (yAxisMode !== 'percentage') { 
+                        yAxisMode = 'percentage'; 
+                        updateVisualization();
+                    }
+                });
+            chartTitle.append('tspan') // Closing gray part
+                .style('fill', '#8d99ae')
+                 .text(')'); 
+        }
+        // ---- END REVISED TITLE LOGIC ----
 
         // --- Scatterplot Points (Dots) ---
+        // Bind ALL data initially. Styling/visibility handled by highlightState.
         scatterPoints = scatterSvg.append('g') // Append points to a group
             .selectAll("circle.dot") // Select circles with class 'dot'
-            .data(currentPlotData, d => d.fips) // Use FIPS as key for object constancy
+            .data(currentPlotData, d => d.fips) // Bind ALL data, use FIPS as key
             .enter()
             .append("circle")
                 .attr("class", "dot") // Add class for potential styling/selection
@@ -457,6 +512,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 event.stopPropagation(); // Prevent click from bubbling to body
             });
             
+        // --- Add Annotations ---
+        // REMOVE Annotation group creation/clearing logic from here
+        // // Create annotation group (if it doesn't exist - though it should after first run)
+        // if (!annotationGroup) {
+        //     annotationGroup = scatterSvg.append("g")
+        //                                 .attr("class", "annotations")
+        //                                 .style("pointer-events", "none");
+        // } else {
+        //     // Clear any existing annotations from previous redraws if updateVisualization is called again (e.g., y-axis toggle)
+        //     annotationGroup.selectAll("*").remove();
+        // }
 
         // --- Map Logic (Moved from createTariffMap) ---
 
@@ -591,8 +657,8 @@ document.addEventListener('DOMContentLoaded', function () {
             .attr("stroke-width", 1) // Reduced thickness from 1.5 to 1
             .attr("d", pathGenerator);
 
-        // --- Apply Initial Coloring ---
-        // This replaces the call originally made after createTariffMap
+        // --- Apply Initial Coloring --- 
+        // This call to highlightState will now ALSO draw initial annotations
         highlightState(null); // Start with all states deselected (grayscale)
 
         // --- Add Body Click Listener for Deselection ---
@@ -678,6 +744,24 @@ document.addEventListener('DOMContentLoaded', function () {
         
         // Update the state highlight border
         updateStateHighlightBorder(selectedState);
+
+        // --- Update Annotations ---
+        // Determine data subset for annotations based on the *current* selection state
+        let dataForAnnotations = currentPlotData;
+        if (stateName) { // Use the stateName passed to this function
+            dataForAnnotations = currentPlotData.filter(d => d.state === stateName);
+        }
+
+        // Find max red/blue counties for the current view
+        const maxCounties = findMaxCounties(dataForAnnotations, yAxisMode);
+
+        // Draw the annotations (drawAnnotations clears previous ones)
+        // Ensure scales x and y are accessible (made global) and group exists
+        if (x && y && annotationGroup) { 
+             drawAnnotations(maxCounties, yAxisMode, x, y);
+        } else {
+             console.error("Scales or annotation group not ready for drawing annotations.");
+        }
     }
     
     // Function to apply map coloring based on selected state
@@ -790,5 +874,132 @@ document.addEventListener('DOMContentLoaded', function () {
         stateHighlightBorder.raise();
     }
 
+    // --- NEW Helper function to find max red/blue counties ---
+    function findMaxCounties(data, mode) {
+        if (!data || data.length === 0) {
+            return { maxRed: null, maxBlue: null };
+        }
+
+        const yValueField = mode === 'percentage' ? 'affected_jobs_pct' : 'total_jobs_affected_2024';
+
+        let maxRed = null;
+        let maxBlue = null;
+        let maxRedValue = -Infinity;
+        let maxBlueValue = -Infinity;
+
+        data.forEach(d => {
+            const value = d[yValueField];
+             // Handle potential NaN or invalid values if necessary, though processing step should minimize this
+            if (typeof value !== 'number' || isNaN(value)) return; 
+
+            const isRed = d.trump_pct > 50; // Simple majority for red/blue split
+
+            if (isRed) {
+                if (value > maxRedValue) {
+                    maxRedValue = value;
+                    maxRed = d;
+                }
+            } else { // isBlue
+                if (value > maxBlueValue) {
+                    maxBlueValue = value;
+                    maxBlue = d;
+                }
+            }
+        });
+
+        return { maxRed, maxBlue };
+    }
+
+    // --- NEW Helper function to format annotation values ---
+    function formatAnnotationValue(value, mode) {
+        if (mode === 'percentage') {
+            // Handle the very small values specifically if needed (e.g., for log minimum)
+            if (value <= 0.01) return '<0.01'; // Or adjust as needed - REMOVED %
+            return d3.format(".1f")(value); // One decimal place for % - REMOVED %
+        } else { // 'total' mode
+            return d3.format(",.0f")(value); // Comma-separated integer
+        }
+    }
+    
+    // --- NEW Helper function to draw annotations ---
+    function drawAnnotations(maxData, mode, xScale, yScale) {
+        // Clear previous annotations within the group
+        annotationGroup.selectAll("*").remove(); 
+
+        const yValueField = mode === 'percentage' ? 'affected_jobs_pct' : 'total_jobs_affected_2024';
+        const annotations = [];
+        if (maxData.maxRed) annotations.push({ data: maxData.maxRed, color: "#f76369" });
+        if (maxData.maxBlue) annotations.push({ data: maxData.maxBlue, color: "#1b98e0" });
+
+        const annotationWidth = 250; // INCREASED width again for text wrapping
+        const annotationHeight = 55; // Keep height as is
+        const yOffset = 15; // How far above the point the annotation box should start
+
+        annotations.forEach(anno => {
+            const d = anno.data;
+            const pointX = xScale(d.trump_pct);
+            let pointY = yScale(d[yValueField]);
+            // Adjust y for log scale minimum if needed (similar to point drawing logic)
+            if (mode === 'total' && d.total_jobs_affected_2024 === 0) {
+                 pointY = yScale(yMin); // Use the minimum y value defined for the scale
+            } else if (mode === 'percentage' && d.affected_jobs_pct <= yMin) {
+                 pointY = yScale(yMin); // Use the minimum y value defined for the scale
+            }
+
+            const foX = pointX - annotationWidth / 2; // Center the foreignObject
+            const foY = pointY - annotationHeight - yOffset; // Position above point
+
+            const formattedValue = formatAnnotationValue(d[yValueField], mode);
+            const textLine1 = `${d.county}, ${d.state}`;
+            const textLine2 = `Affected jobs: <strong>${formattedValue}</strong>${mode === 'percentage' ? '% of votes cast' : ''}`;
+
+            // Add the foreignObject which contains styled HTML
+            const fo = annotationGroup.append("foreignObject")
+                .attr("x", foX)
+                .attr("y", foY)
+                .attr("width", annotationWidth)
+                .attr("height", annotationHeight)
+                // Add a slight fade-in transition
+                .style("opacity", 0)
+                ;
+
+            // Append an HTML div inside the foreignObject - NOW works because fo is a selection
+            const div = fo.append("xhtml:div")
+                .style("background-color", "rgba(240, 240, 240, 0.9)") // Match tooltip bg
+                .style("padding", "8px") // INCREASED Padding inside the box
+                .style("border-radius", "5px") // Rounded corners
+                .style("font-size", "14px") // Match tooltip font size
+                .style("font-family", "var(--ui-font), sans-serif") // Match tooltip font
+                .style("color", "#333") // Match tooltip text color
+                .style("text-align", "left") // CHANGED to left align
+                .style("line-height", "1.4") // INCREASED line spacing
+                .html(`
+                    <div>${textLine1}</div>
+                    <div>${textLine2}</div>
+                `);
+
+            // Add a line connecting the bottom of the annotation box to the point
+            const line = annotationGroup.append("line") // Store line selection
+                .attr("x1", pointX)
+                .attr("y1", foY + annotationHeight - 5) // Start near bottom-center of the box (adjust offset as needed)
+                .attr("x2", pointX)
+                .attr("y2", pointY - 4) // End just above the circle radius
+                .attr("stroke", "#555") // Dark gray line
+                .attr("stroke-width", 0.5)
+                .attr("stroke-dasharray", "2,2")
+                // Add fade-in transition synchronized with foreignObject
+                .style("opacity", 0)
+                ;
+
+            // NOW apply transitions after elements are created
+            fo.transition()
+              .duration(300)
+              .style("opacity", 1);
+              
+            line.transition()
+                .duration(300)
+                .style("opacity", 1);
+        });
+    }
 
 }); // End of DOMContentLoaded
