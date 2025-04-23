@@ -79,6 +79,39 @@
             Data sources: <a href = 'https://www.brookings.edu/articles/chinas-retaliatory-tariffs-will-hurt-trump-voting-counties-most/' target="_blank">Affected Jobs by County, Brookings Institution</a>; and <a href = 'https://www.bls.gov/oes/tables.htm' target="_blank">Occupational Employment and Wage Statistics table</a> from the US Bureau of Labor Statistics.
         </p>
 
+        <!-- WRAPPER for scrolly section -->
+        <div id="scrolly-wrapper">
+            <!-- Original scrolly container is now sticky inside wrapper -->
+            <div class="viz-container" id="scrollytelling-container">
+                <!-- Sticky graphic area -->
+                <div id="scrolly-graphic">
+                    <!-- Container for the map (will slide up) -->
+                    <div id="scrolly-map-container">
+                         <!-- Text Above Map (Initially Hidden) -->
+                         <div id="scrolly-map-text-above" class="scrolly-map-text">
+                            <p>Placeholder text ABOVE map for Scene 1b.</p>
+                         </div>
+                         <!-- Map SVG will be appended here by D3 -->
+                         <!-- Text Below Map (Initially Hidden) -->
+                          <div id="scrolly-map-text-below" class="scrolly-map-text">
+                            <p>Placeholder text BELOW map for Scene 1b.</p>
+                         </div>
+                    </div>
+                     <!-- Container for the text block (will slide in) -->
+                     <div id="scrolly-text-block" class="scrolly-hidden">
+                        <h3>Leading Industries Placeholder</h3>
+                        <p><strong>Top Red County (Placeholder):</strong> Info about industries here...</p>
+                        <p><strong>Top Blue County (Placeholder):</strong> Info about industries here...</p>
+                     </div>
+                     <!-- Container for the scatterplot (remains) -->
+                     <div id="scrolly-scatterplot-container">
+                        <p style="text-align: center; padding: 20px; border: 1px dashed #ccc; margin-top: 50px;">Scrolly Scatterplot Area</p>
+                     </div>
+                </div>
+            </div>
+        </div> 
+        <!-- END scrolly wrapper -->
+
         <div class="text-block">
             <p>
                 This chart below shows total employment in industries targeted by Chinese tariffs, aggregated at the state level.
@@ -154,9 +187,12 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- Load TopoJSON for map data processing -->
     <script src="https://unpkg.com/topojson@3"></script>
+    <!-- Load Scrollama -->
+    <!-- <script src="https://unpkg.com/scrollama"></script> -->
     
     <!-- Load our JavaScript modules -->
     <script src="js/tariffs_map_plot.js"></script>
     <script src="js/employment_barchart.js"></script>
+    <script src="js/scrollytelling_viz.js"></script>
 </body>
 </html> 

@@ -892,7 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
              // Handle potential NaN or invalid values if necessary, though processing step should minimize this
             if (typeof value !== 'number' || isNaN(value)) return; 
 
-            const isRed = d.trump_pct > 50; // Simple majority for red/blue split
+            const isRed = d.trump_pct > d.harris_pct; // NEW CRITERIA: Red if Trump > Harris
 
             if (isRed) {
                 if (value > maxRedValue) {

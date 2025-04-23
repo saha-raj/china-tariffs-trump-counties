@@ -1540,3 +1540,171 @@ video {
     }
 }
 /* --- END RESPONSIVE CHANGES --- */
+
+/* --- START SCROLLYTELLING STRUCTURE --- */
+#scrolly-wrapper {
+    position: relative;
+    /* Height determines scroll duration. Adjust as needed */
+    height: 400vh; /* INCREASED height significantly */
+    /* Add full-width breakout styles */
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#scrollytelling-container {
+    /* This container becomes sticky within the wrapper */
+    position: sticky;
+    top: 0;
+    height: 100vh; /* Fill viewport height when sticky */
+    width: 100%; /* Fill width of the wrapper */
+    overflow: hidden; 
+    /* Reset inherited conflicting styles from .viz-container if class was used */
+    left: auto; 
+    transform: none;
+    /* Ensure it inherits background if needed, or set explicitly */
+    background-color: var(--sim-bg); /* Explicitly set background */
+    padding: 1rem; /* Re-apply padding if needed */
+    display: block; /* Override potential flex from .viz-container */
+}
+
+#scrolly-graphic {
+    /* Graphic fills the sticky container */
+    width: 100%; 
+    height: 100%; 
+    /* Remove positioning related to old layout */
+    /* position: sticky; */
+    /* top: 20px;  */
+    /* float: left; */
+    /* z-index: 1; */ 
+    display: flex;
+    flex-direction: row; /* side-by-side */
+    gap: 10px;
+    align-items: stretch; /* Make children fill height */
+    opacity: 1;
+}
+
+/* Map and Text Block Container (share the left side space) */
+#scrolly-map-container,
+#scrolly-text-block {
+    flex: 1; /* Let flexbox handle width */
+    /* width: 49%; */ /* REMOVED explicit width */
+    height: 100%; 
+    min-width: 0; /* Prevent flex overflow */
+    position: relative; /* Changed from absolute for text block */
+    transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out; 
+    /* border: 1px solid #eee; */ /* Removed temporary border */
+    padding: 10px;
+    background-color: #f0f0f0; /* Temporary bg */
+}
+
+/* Text block specific styling - NO LONGER USED for sliding effect */
+#scrolly-text-block {
+    position: absolute; 
+    top: 0;
+    left: 0;
+    width: 100%; /* Take full width of its container space */
+    height: 100%; /* Take full height */
+    transform: translateY(100%); /* Start below the view */
+    opacity: 1;
+}
+
+/* NEW Styles for Text Above/Below Map */
+.scrolly-map-text {
+    position: absolute; /* Position relative to map container */
+    left: 10px; /* Padding from left */
+    right: 10px; /* Padding from right */
+    background-color: rgba(248, 249, 250, 0.85); /* Use var(--sim-bg) with alpha */
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 10; /* Ensure text is above map paths */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+#scrolly-map-text-above {
+    top: 10px; /* Position near top */
+}
+
+#scrolly-map-text-below {
+    bottom: 10px; /* Position near bottom */
+}
+
+/* Class to show the text */
+.scrolly-map-text.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s;
+}
+
+/* Scatterplot container (takes the other half) */
+#scrolly-scatterplot-container {
+    flex: 1; /* Let flexbox handle width */
+    /* width: 49%; */ /* REMOVED explicit width */
+    height: 100%; 
+    min-width: 0; /* Prevent flex overflow */
+    position: relative;
+    background-color: #f0f0f0; 
+}
+
+/* State transitions driven by JS adding/removing classes */
+#scrolly-map-container.is-hidden {
+    transform: translateY(-100%); /* Slide map up */
+    opacity: 0;
+}
+
+#scrolly-text-block.is-visible {
+    transform: translateY(0); /* Slide text in */
+    opacity: 1;
+}
+
+/* Scrollytelling Responsive adjustments */
+@media (max-width: 768px) { 
+    #scrolly-wrapper {
+        height: auto; /* Disable fixed scroll height */
+    }
+    #scrollytelling-container {
+        position: relative; /* Unstick */
+        height: auto;
+        top: auto;
+    }
+    #scrolly-graphic {
+        width: 100%;
+        /* float: none; */
+        position: relative; 
+        height: auto; 
+        margin-bottom: 10px; /* Add margin when visible */
+    }
+
+    /* Ensure map/scatter take full width on mobile */
+    #scrolly-map-container,
+    #scrolly-scatterplot-container {
+        width: 100%;
+        flex-basis: auto; /* Reset flex basis */
+        height: 50vh; /* Give them a fixed height */
+        margin-bottom: 10px;
+    }
+
+    /* Handle text block differently on mobile - maybe overlay? */
+    #scrolly-text-block {
+         /* Revisit mobile positioning - for now, keep absolute over map area */
+         /* It might need to become static or overlay differently */
+         transform: translateY(100%); /* Keep hidden initially */
+    }
+    #scrolly-map-container.is-hidden { 
+        /* On mobile, maybe just hide map instead of sliding? */
+        display: none; 
+    } 
+     #scrolly-text-block.is-visible {
+        /* On mobile, ensure it takes space when visible */
+        position: relative; 
+        transform: translateY(0);
+        opacity: 1;
+        height: auto; /* Adjust height */
+        margin-bottom: 10px; /* Add margin when visible */
+    }
+}
+/* --- END SCROLLYTELLING STRUCTURE --- */
