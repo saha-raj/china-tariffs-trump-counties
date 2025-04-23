@@ -53,13 +53,45 @@
     background-color: rgba(240, 240, 240, 0.9);
     padding: 6px;
     border-radius: 4px;
-    font-size: 11px; /* Smaller font for map annotations */
+    font-size: 14px; /* INCREASED font size again */
     font-family: var(--ui-font), sans-serif;
     color: #333;
-    text-align: center; /* Center text within box */
+    text-align: left; /* CHANGED to left */
     line-height: 1.3;
 }
 
 .map-annotation-box strong {
     font-weight: 600;
+}
+
+/* NEW: Separate class for Scatterplot Annotations */
+.scatter-annotation-box {
+    /* Copy styles from map-annotation-box */
+    background-color: rgba(240, 240, 240, 0.9);
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 14px; /* Keep increased font size */
+    font-family: var(--ui-font), sans-serif;
+    color: #333;
+    line-height: 1.3;
+    /* Set text-align to CENTER specifically */
+    text-align: left; /* CHANGED TO LEFT */
+}
+
+.scatter-annotation-box strong {
+    font-weight: 600;
+}
+
+/* NEW: Scrollytelling Title Overlay */
+#scrolly-title {
+    position: absolute;
+    top: 2rem; /* Adjust vertical position */
+    left: 4rem; /* Adjust horizontal position */
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.8rem; /* Adjust size as needed */
+    font-weight: 600;
+    color: #4a4e69;
+    z-index: 10; /* Ensure title is above graphics */
+    pointer-events: none; /* Allow interaction with elements underneath */
+    line-height: 1.2;
 } 

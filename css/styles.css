@@ -1550,6 +1550,7 @@ video {
     width: 100vw;
     left: 50%;
     transform: translateX(-50%);
+    background-color: #f0f0f0;
 }
 
 #scrollytelling-container {
@@ -1563,7 +1564,8 @@ video {
     left: auto; 
     transform: none;
     /* Ensure it inherits background if needed, or set explicitly */
-    background-color: var(--sim-bg); /* Explicitly set background */
+    /* background-color: var(--sim-bg);  */
+    background-color: #f0f0f0;
     padding: 1rem; /* Re-apply padding if needed */
     display: block; /* Override potential flex from .viz-container */
 }
@@ -1595,7 +1597,7 @@ video {
     transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out; 
     /* border: 1px solid #eee; */ /* Removed temporary border */
     padding: 10px;
-    background-color: #f0f0f0; /* Temporary bg */
+    /* background-color: #f0f0f0;  */
 }
 
 /* Text block specific styling - NO LONGER USED for sliding effect */
@@ -1642,12 +1644,12 @@ video {
 
 /* Scatterplot container (takes the other half) */
 #scrolly-scatterplot-container {
-    flex: 1; /* Let flexbox handle width */
-    /* width: 49%; */ /* REMOVED explicit width */
+    flex: 1; 
     height: 100%; 
-    min-width: 0; /* Prevent flex overflow */
+    min-width: 0; 
     position: relative;
-    background-color: #f0f0f0; 
+    /* background-color: #f0f0f0;  */
+    /* Ensure previous flex properties are removed */
 }
 
 /* State transitions driven by JS adding/removing classes */

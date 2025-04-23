@@ -51,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const scatterMargin = { top: 40, right: 30, bottom: 50, left: 60 }; 
         const mapMargin = { top: 10, right: 10, bottom: 10, left: 10 };
-        const plotTopPadding = 20; 
         let mapWidth, mapHeight, scatterWidth, scatterHeight; // Store dimensions
 
         function setupContainers() {
@@ -190,7 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const annotations = [];
             if (annotationData.maxRed) annotations.push({ data: annotationData.maxRed });
             if (annotationData.maxBlue) annotations.push({ data: annotationData.maxBlue });
-            const annotationWidth = 250, annotationHeight = 55, yOffset = 15;
+            const annotationWidth = 250, annotationHeight = 55;
+            // Decrease offset further to pull box down more
+            const yOffset = 5; 
 
             annotations.forEach(anno => {
                 const d = anno.data;
@@ -201,47 +202,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (mode === 'total' && d.total_jobs_affected_2024 === 0) { pointY = yScale(yMin); }
                 else if (mode === 'percentage' && d.affected_jobs_pct <= yMin) { pointY = yScale(yMin); }
                 if (isNaN(pointY)) { console.warn("Invalid y-scale result after adjustment for annotation", d, yMin); return; }
-                const foX = pointX - annotationWidth / 2, foY = pointY - annotationHeight - yOffset;
+
+                // Center box horizontally above point
+                const foX = pointX - annotationWidth / 4; // Shift right from fully centered
+                const foY = pointY - annotationHeight - yOffset; // Position box vertically
                 const formattedValue = scrolly_formatAnnotationValue(d[yValueField], mode);
                 const textLine1 = `${d.county}, ${d.state}`;
                 const textLine2 = `Affected jobs: <strong>${formattedValue}</strong>${mode === 'percentage' ? '% of votes cast' : ''}`;
-                const fo = annotationGroup.append("foreignObject").attr("x", foX).attr("y", foY).attr("width", annotationWidth).attr("height", annotationHeight).style("opacity", 0);
-                fo.append("xhtml:div").style("background-color", "rgba(240, 240, 240, 0.9)").style("padding", "8px").style("border-radius", "5px").style("font-size", "14px").style("font-family", "var(--ui-font), sans-serif").style("color", "#333").style("text-align", "left").style("line-height", "1.4").html(`<div>${textLine1}</div><div>${textLine2}</div>`);
-                const line = annotationGroup.append("line").attr("x1", pointX).attr("y1", foY + annotationHeight - 5).attr("x2", pointX).attr("y2", pointY - 4).attr("stroke", "#555").attr("stroke-width", 0.5).attr("stroke-dasharray", "2,2").style("opacity", 0);
-                fo.transition().duration(300).style("opacity", 1);
-                line.transition().duration(300).style("opacity", 1);
+                const fo = annotationGroup.append("foreignObject")
+                   .attr("x", foX).attr("y", foY).attr("width", annotationWidth).attr("height", annotationHeight)
+                   .style("opacity", 1); 
+                fo.append("xhtml:div")
+                   .attr("class", "scatter-annotation-box")
+                   .html(`<div>${textLine1}</div><div>${textLine2}</div>`);
             });
         }
         
         // Modified to accept showAnnotations parameter
         function updateScatterplot(showAnnotations) {
-            if (!scatterSvg) return;
-            scatterSvg.selectAll("g").remove(); // Clear previous elements except the main <g>
-            annotationGroup = scatterSvg.append("g").attr("class", "scrolly-annotations").style("pointer-events", "none"); // Recreate group
+            if (!scatterSvg || !countyData.length) return;
+             // Ensure dimensions are set
+            // ... dimension checks ...
+            
+            // Clear previous elements
+            scatterSvg.selectAll("g.x-axis, g.y-axis, g.grid, g.scrolly-annotations").remove(); 
+            scatterSvg.selectAll("circle.dot").remove(); // Remove points directly if not in a group
+            scatterSvg.selectAll(".x-axis-label").remove(); // REMOVE existing label
+            
+            // Recreate annotation group (since it was cleared with selectAll("g"))
+            annotationGroup = scatterSvg.append("g").attr("class", "scrolly-annotations").style("pointer-events", "none"); 
 
-            currentYMode = 'total';
+            currentYMode = 'total'; // Keep total mode for now
             x = d3.scaleLinear().domain([0, 100]).range([0, scatterWidth]);
+
+            // Calculate vertical drawing zone (60% height, centered)
+            const drawingAreaHeight = scatterHeight;
+            const plotHeight60 = drawingAreaHeight * 0.6;
+            const plotOffsetY = drawingAreaHeight * 0.2; // 20% top/bottom padding within drawing area
+
             if (currentYMode === 'percentage') {
                  yMin = 0.01;
                  yMax = d3.max(countyData, d => d.affected_jobs_pct) || 100; 
-                 y = d3.scaleLog().base(10).domain([yMin, yMax + (yMax * 0.1)]).range([scatterHeight, plotTopPadding]);
+                 // Adjust Y range to map to central 60%
+                 y = d3.scaleLog().base(10).domain([yMin, yMax + (yMax * 0.1)])
+                      .range([plotOffsetY + plotHeight60, plotOffsetY]);
              } else { 
                  yMin = d3.min(countyData, d => d.total_jobs_affected_2024 > 0 ? d.total_jobs_affected_2024 : Infinity);
                  yMin = Math.max(1, (isFinite(yMin) ? yMin : 1)); 
                  yMax = d3.max(countyData, d => d.total_jobs_affected_2024) || 1; 
                  yMax = Math.max(yMax, yMin + 1);
-                 y = d3.scaleLog().base(10).domain([yMin, yMax + (yMax * 0.1)]).range([scatterHeight, plotTopPadding]);
+                 // Adjust Y range to map to central 60%
+                 y = d3.scaleLog().base(10).domain([yMin, yMax + (yMax * 0.1)])
+                      .range([plotOffsetY + plotHeight60, plotOffsetY]);
              }
-            if (isNaN(y.domain()[0]) || isNaN(y.domain()[1]) || isNaN(y.range()[0]) || isNaN(y.range()[1])){
+            if (isNaN(y.domain()[0]) || isNaN(y.domain()[1])) {
                  console.error("Invalid Y scale configuration:", y.domain(), y.range()); return;
             }
-            const xAxis = d3.axisBottom(x).tickFormat(d => `${d}%`);
-            scatterSvg.append("g").attr("class", "x-axis").attr("transform", `translate(0,${scatterHeight})`).call(xAxis).selectAll("text").style("font-size", "11px").style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
+
+            // Axes & Grid
+            const xAxis = d3.axisBottom(x)
+                .tickValues([0, 25, 50, 75, 100]) // Specify tick values
+                .tickFormat(d => `${d}%`);
+            scatterSvg.append("g").attr("class", "x-axis")
+               .attr("transform", `translate(0,${plotOffsetY + plotHeight60})`) 
+               .call(xAxis).selectAll("text")
+                 // Increase tick label font size
+                 .style("font-size", "13px") 
+                 .style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
+            
             let yAxisTicks, yAxisFormat;
             if (currentYMode === 'percentage') { yAxisTicks = [0.01, 0.1, 1, 10, 100]; yAxisFormat = d => d3.format(".2~f")(d) + "%"; }
             else { yAxisTicks = [1, 10, 100, 1000, 10000, 50000]; yAxisFormat = d3.format(","); }
             const yAxis = d3.axisLeft(y).tickValues(yAxisTicks).tickFormat(yAxisFormat);
-            scatterSvg.append("g").attr("class", "y-axis").call(yAxis).selectAll("text").style("font-size", "11px").style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
+            scatterSvg.append("g").attr("class", "y-axis").call(yAxis).selectAll("text")
+                 // Increase tick label font size
+                 .style("font-size", "13px") 
+                 .style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
             scatterSvg.append("g").attr("class", "grid y-grid").call(d3.axisLeft(y).tickValues(yAxisTicks).tickSize(-scatterWidth).tickFormat("")).call(g => g.select(".domain").remove()).selectAll("line").style("stroke", "#e0e0e0").style("stroke-dasharray", "2,2");
 
             // Points (no changes needed)
@@ -254,6 +290,18 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                  annotationGroup.selectAll("*").remove(); // Ensure removed if not shown
             }
+
+            // Add X axis label at the end (after points/annotations)
+            scatterSvg.append("text")
+                .attr("class", "x-axis-label")
+                .attr("text-anchor", "middle")
+                .attr("x", scatterWidth / 2)
+                // Position below the adjusted x-axis
+                .attr("y", plotOffsetY + plotHeight60 + scatterMargin.bottom - 15) 
+                .style("font-size", "14px") // Increase axis label font size
+                .style("fill", "#333")
+                .style("font-family", "'JetBrains Mono', monospace")
+                .text("Trump Vote Share (2020)");
         }
 
         // REMOVE updateMap function - replaced by drawBaseMapAndBorders and drawMapOverlays
@@ -289,6 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .attr("fill", d => { // Apply grayscale fill here, ONE TIME
                     const countyProperties = d.properties?.data;
                     if (!countyProperties) return "#eee"; 
+                    // UNCONDITIONALLY apply grayscale based on total jobs for the base map
                     if (!valueColorScale || mapColorMin === undefined) { return "#eee"; }
                     const value = countyProperties.total_jobs_affected_2024;
                     const safeValue = (value > 0) ? value : mapColorMin; 
@@ -315,13 +364,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const highlightFipsSet = new Set(countiesToHighlightArray.map(c => c?.fips).filter(Boolean));
             const highlightStateSet = new Set(countiesToHighlightArray.map(c => c?.state).filter(Boolean));
 
-            // Draw State Highlight Borders
+            // Draw State Highlight Borders - ADD FILL AND OPACITY HERE
             let stateFeaturesToDraw = stateFeatures.filter(f => highlightStateSet.has(f.properties.name));
             stateHighlightBorderGroup.selectAll("path.scrolly-state-highlight-border")
                  .data(stateFeaturesToDraw).enter().append("path")
                      .attr("class", "scrolly-state-highlight-border") 
-                     .attr("fill", "none").attr("stroke", "#2a324b")
-                     .attr("stroke-width", 1.5).style("pointer-events", "none")
+                     // .attr("fill", "none") // REMOVE fill none
+                     .attr("stroke", "#2a324b")
+                     .attr("stroke-width", 2).style("pointer-events", "none")
+                     .style("fill", "#6a0dad") // ADD Purple fill color
+                     .style("fill-opacity", 0.2) // ADD Opacity
                      .attr("d", d => pathGenerator(d))
                      .raise(); 
 
@@ -336,44 +388,53 @@ document.addEventListener('DOMContentLoaded', function() {
                    .raise(); 
 
             // Draw Annotation Boxes and Lines
-            const boxWidth = 160; const boxHeight = 65;
+            const mapBoxWidth = 280; // INCREASED width further
+            const mapBoxHeight = 80;  // Keep height
+            
             countiesToHighlightArray.forEach((countyData, index) => {
                 if (!countyData) return;
                 const feature = countyFeaturesToDraw[index]; 
                 if (!feature) return;
                 const centroid = pathGenerator.centroid(feature);
-                if (isNaN(centroid[0]) || isNaN(centroid[1])) return;
+                if (isNaN(centroid[0]) || isNaN(centroid[1])) { console.warn("Invalid centroid for", countyData); return; }
 
-                let targetY, boxY, textContentHtml;
-                const boxX = (mapWidth / 2) - (boxWidth / 2);
+                let targetY, boxY;
+                let textContentHtml;
+                const boxX = centroid[0] - (mapBoxWidth / 2);
 
                 if (countyData === topRedCounty) {
                     targetY = mapHeight * 0.20; 
-                    boxY = targetY - boxHeight / 2; 
-                    textContentHtml = `<b>${topRedCounty?.county || 'N/A'}, ${topRedCounty?.state || 'N/A'} (Red)</b><br/>Total Jobs: ${scrolly_formatAnnotationValue(topRedCounty?.total_jobs_affected_2024, 'total')}<br/><i>Industries: Placeholder...</i>`;
+                    boxY = targetY - mapBoxHeight / 2; 
+                    // Define color based on winner
+                    const color = scrolly_getPointColor(topRedCounty);
+                    // Wrap county/state in styled span
+                    textContentHtml = `<span style="color: ${color}; font-weight: bold;">${topRedCounty?.county || 'N/A'}, ${topRedCounty?.state || 'N/A'} (Trump Won)</span><br/>Total Jobs: ${scrolly_formatAnnotationValue(topRedCounty?.total_jobs_affected_2024, 'total')}<br/>Industries: Manufacturing, Agriculture`;
                 } else if (countyData === topBlueCounty) {
                     targetY = mapHeight * 0.80; 
-                    boxY = targetY - boxHeight / 2;
-                    textContentHtml = `<b>${topBlueCounty?.county || 'N/A'}, ${topBlueCounty?.state || 'N/A'} (Blue)</b><br/>Total Jobs: ${scrolly_formatAnnotationValue(topBlueCounty?.total_jobs_affected_2024, 'total')}<br/><i>Industries: Placeholder...</i>`;
+                    boxY = targetY - mapBoxHeight / 2;
+                    // Define color based on winner
+                    const color = scrolly_getPointColor(topBlueCounty);
+                    // Wrap county/state in styled span
+                    textContentHtml = `<span style="color: ${color}; font-weight: bold;">${topBlueCounty?.county || 'N/A'}, ${topBlueCounty?.state || 'N/A'} (Harris Won)</span><br/>Total Jobs: ${scrolly_formatAnnotationValue(topBlueCounty?.total_jobs_affected_2024, 'total')}<br/>Industries: Energy/Oil, Aerospace`;
                 } else { return; }
                 
-                boxY = Math.max(0, Math.min(mapHeight - boxHeight, boxY));
-                const lineTargetY = boxY + (countyData === topRedCounty ? 0 : boxHeight); 
+                boxY = Math.max(0, Math.min(mapHeight - mapBoxHeight, boxY));
+                const lineTargetY = boxY + (countyData === topRedCounty ? mapBoxHeight : 0); // Connect to bottom edge of top box, top edge of bottom box
 
                 if (Math.abs(centroid[1] - lineTargetY) > 5) { 
                     annotationLineGroup.append("line")
                         .attr("class", "annotation-line") 
                         .attr("x1", centroid[0])
                         .attr("y1", centroid[1])
-                        .attr("x2", centroid[0]) // Vertical line
-                        .attr("y2", lineTargetY); // Connect to target Y
+                        .attr("x2", centroid[0]) // Vertical
+                        .attr("y2", lineTargetY); // Connect to relevant box edge
                 }
 
                 const fo = mapAnnotationGroup.append("foreignObject")
                     .attr("x", boxX)
                     .attr("y", boxY)
-                    .attr("width", boxWidth)
-                    .attr("height", boxHeight);
+                    .attr("width", mapBoxWidth)
+                    .attr("height", mapBoxHeight);
 
                 fo.append("xhtml:div").attr("class", "map-annotation-box").html(textContentHtml);
             });
@@ -393,16 +454,39 @@ document.addEventListener('DOMContentLoaded', function() {
             updateScatterplot(false); // No scatter annotations
             clearMapOverlays(); // Remove borders, lines, map annotations
             // Base map fill remains untouched
+
+            // Ensure scatter point borders are removed
+            if (scatterPoints && topRedCounty) {
+                scatterPoints.filter(d => d.fips === topRedCounty.fips).style("stroke", null);
+            }
+            if (scatterPoints && topBlueCounty) {
+                scatterPoints.filter(d => d.fips === topBlueCounty.fips).style("stroke", null);
+            }
         }
 
         function showScene1b() {
             console.log("Activating Scene 1b");
+             // Ensure top counties are calculated (using currentYMode, which is 'total')
              scrolly_findMaxCounties(countyData, currentYMode); 
              const highlightCounties = [topRedCounty, topBlueCounty].filter(Boolean); 
             
-            updateScatterplot(true); // Show scatter annotations
+            updateScatterplot(true); // SHOW scatter annotations
             drawMapOverlays(highlightCounties); // Draw borders, lines, map annotations
             // Base map fill remains untouched
+
+            // Add borders to the specific scatter points
+            if (scatterPoints && topRedCounty) {
+                scatterPoints.filter(d => d.fips === topRedCounty.fips)
+                    .style("stroke", "black")
+                    .style("stroke-width", 2.5)
+                    .raise(); // Bring to front
+            }
+            if (scatterPoints && topBlueCounty) {
+                scatterPoints.filter(d => d.fips === topBlueCounty.fips)
+                    .style("stroke", "black")
+                    .style("stroke-width", 2.5)
+                    .raise(); // Bring to front
+            }
         }
 
         // --- Public Methods --- 
