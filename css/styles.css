@@ -1505,3 +1505,38 @@ video {
 .header-nav-text a:hover {
     color: #415a78; /* Hover color */
 }
+
+/* --- START RESPONSIVE CHANGES --- */
+@media (max-width: 1024px) { /* INCREASED threshold */
+    /* Hide the map container */
+    #tariff-map-container {
+        display: none;
+    }
+
+    /* Allow scatterplot container to take full width */
+    #tariff-scatterplot-container {
+        flex-basis: 100%;
+        max-width: 100%;
+    }
+
+    /* Stack employment viz items vertically */
+    #employment-viz-container {
+        flex-direction: column;
+        align-items: center; /* Center items horizontally when stacked */
+    }
+
+    /* Ensure filters and bar chart take full width */
+    #employment-filters,
+    #employment-barchart {
+        flex-basis: 100%; /* Take full width */
+        max-width: 95%; /* Add slight padding */
+        width: 95%;
+        align-self: center; /* Ensure centering */
+    }
+
+    /* Adjust filter options for wrapping/layout */
+    #employment-filters .naics-checkbox-container {
+        justify-content: flex-start; /* Align items to the start (left) */
+    }
+}
+/* --- END RESPONSIVE CHANGES --- */
