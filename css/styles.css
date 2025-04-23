@@ -1708,3 +1708,22 @@ video {
     }
 }
 /* --- END SCROLLYTELLING STRUCTURE --- */
+
+/* NEW: County Highlight Border Style */
+.county-highlight-border {
+    fill: none;
+    stroke: black;
+    stroke-width: 1.5px;
+    pointer-events: none;
+}
+
+/* NEW: Annotation Line Style */
+.annotation-line {
+    stroke: #555;
+    stroke-width: 1px;
+    stroke-dasharray: 3,3;
+}
+
+#scrolly-steps {
+    // ... existing code ...
+}

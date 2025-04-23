@@ -1,0 +1,65 @@
+/* Styles specific to Scrollytelling elements */
+
+/* County Highlight Border Style */
+.county-highlight-border {
+    fill: none;
+    stroke: black;
+    stroke-width: 1.5px;
+    pointer-events: none;
+}
+
+/* NEW: Annotation Line Style */
+.annotation-line {
+    stroke: #555;
+    stroke-width: 1px;
+    stroke-dasharray: 3,3;
+}
+
+/* REMOVE Styles for Text Above/Below Map */
+/*
+.scrolly-map-text {
+    position: absolute; 
+    left: 10px; 
+    right: 10px; 
+    background-color: rgba(248, 249, 250, 0.85); 
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 10; 
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0.5s;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+#scrolly-map-text-above {
+    top: 10px; 
+}
+
+#scrolly-map-text-below {
+    bottom: 10px; 
+}
+
+.scrolly-map-text.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-in-out, visibility 0s linear 0s;
+}
+*/
+
+/* NEW: Styles for SVG Map Annotation Boxes (using foreignObject) */
+.map-annotation-box {
+    /* Styles for the embedded HTML div */
+    background-color: rgba(240, 240, 240, 0.9);
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 11px; /* Smaller font for map annotations */
+    font-family: var(--ui-font), sans-serif;
+    color: #333;
+    text-align: center; /* Center text within box */
+    line-height: 1.3;
+}
+
+.map-annotation-box strong {
+    font-weight: 600;
+} 

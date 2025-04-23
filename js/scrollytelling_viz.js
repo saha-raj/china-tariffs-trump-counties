@@ -39,12 +39,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let projection, pathGenerator;
         let mapSvg, scatterSvg;
         let mapPaths, stateHighlightBorder, scatterPoints, annotationGroup, mapAnnotationGroup;
+        let countyHighlightGroup, annotationLineGroup; // NEW groups
         let x, y;
         let yMin, yMax;
         let currentYMode = 'total'; 
         let topRedCounty = null;
         let topBlueCounty = null;
-        let valueColorScale; // Renamed from mapColorScale - Scale for value shading
+        let valueColorScale; // Scale for value shading (grayscale)
+        let selectedColorScale; // Scale for highlighted states (purple)
         let mapColorMin, mapColorMax; // Declare in outer scope
 
         const scatterMargin = { top: 40, right: 30, bottom: 50, left: 60 }; 
@@ -59,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function() {
             scatterHeight = scatterContainer.node().clientHeight || 300; 
 
             mapWidth = mapContainerWidth - mapMargin.left - mapMargin.right;
-            mapHeight = mapHeight - mapMargin.top - mapMargin.bottom; // Adjust height for margins
+            mapHeight = mapHeight - mapMargin.top - mapMargin.bottom; 
             scatterWidth = scatterContainerWidth - scatterMargin.left - scatterMargin.right;
             scatterHeight = scatterHeight - scatterMargin.top - scatterMargin.bottom;
 
@@ -69,10 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 .attr("preserveAspectRatio", "xMidYMid meet")
                 .append("g")
                 .attr("transform", `translate(${mapMargin.left},${mapMargin.top})`);
-            stateHighlightBorder = mapSvg.append("path").attr("class", "scrolly-state-highlight-border").attr("fill", "none").attr("stroke", "#2a324b").attr("stroke-width", 1.5).style("pointer-events", "none").attr("d", null);
-            // Add group for map annotations
-            mapAnnotationGroup = mapSvg.append("g").attr("class", "scrolly-map-annotations");
-
+            
             scatterSvg = scatterContainer.append("svg")
                 .attr("viewBox", `0 0 ${scatterContainerWidth} ${scatterContainer.node().clientHeight}`)
                 .attr("preserveAspectRatio", "xMidYMid meet")
@@ -80,21 +79,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 .attr("transform", `translate(${scatterMargin.left},${scatterMargin.top})`);
             annotationGroup = scatterSvg.append("g").attr("class", "scrolly-annotations").style("pointer-events", "none");
             
+            // Create STATIC groups for map base layers
+            mapSvg.append("g").attr("class", "counties"); // Group for base county fills
+            mapSvg.append("g").attr("class", "static-borders"); // Group for state/nation lines
+
+            // Create DYNAMIC groups for overlays (cleared/redrawn per scene)
+            stateHighlightBorderGroup = mapSvg.append("g").attr("class", "scrolly-state-highlight-borders");
+            countyHighlightGroup = mapSvg.append("g").attr("class", "county-highlight-borders");
+            annotationLineGroup = mapSvg.append("g").attr("class", "annotation-lines");
+            mapAnnotationGroup = mapSvg.append("g").attr("class", "scrolly-map-annotations"); 
+
             projection = d3.geoAlbersUsa();
             pathGenerator = d3.geoPath().projection(projection);
-            
-            // Color Scale Setup moved to init after data is loaded
-            // --- REMOVE Color Scale setup from here ---
-            /*
-            if (!countyData || countyData.length === 0) return; 
-            mapColorMin = d3.min(countyData, d => d.total_jobs_affected_2024 > 0 ? d.total_jobs_affected_2024 : Infinity); 
-            mapColorMax = d3.max(countyData, d => d.total_jobs_affected_2024);
-            mapColorMin = Math.max(1, isFinite(mapColorMin) ? mapColorMin : 1); 
-            mapColorMax = Math.max(1, mapColorMax || 1); 
-            valueColorScale = d3.scaleSequentialLog(d3.interpolateRgb("#ffffff", "#767b91")) 
-                 .domain([mapColorMin, mapColorMax]);
-            console.log(`Scrolly Map Color Scale Setup: Domain=[${mapColorMin}, ${mapColorMax}], Scale Defined=${!!valueColorScale}`);
-            */
         }
 
         function setupColorScale() {
@@ -110,6 +106,10 @@ document.addEventListener('DOMContentLoaded', function() {
              
             // EXACT COPY from tariffs_map_plot.js line 278 (using valueColorScale name)
             valueColorScale = d3.scaleSequentialLog(d3.interpolateRgb("#ffffff", "#767b91")) 
+                 .domain([mapColorMin, mapColorMax]);
+
+            // Purple scale for selected state (matching original viz)
+            selectedColorScale = d3.scaleSequentialLog(d3.interpolateRgb("#FED8E9", "#b5179e"))
                  .domain([mapColorMin, mapColorMax]);
 
             // DEBUG LOG
@@ -213,43 +213,15 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        function scrolly_drawMapAnnotations(countiesToHighlight) {
-            mapAnnotationGroup.selectAll("*").remove(); // Clear previous
-            if (!countiesToHighlight || countiesToHighlight.length === 0 || !projection) return;
-
-            countiesToHighlight.forEach(countyData => {
-                if (!countyData || !countyData.fips) return;
-                // Find the geometry for this county
-                const countyFeature = topojson.feature(usMapData, usMapData.objects.counties).features.find(f => f.id === countyData.fips);
-                if (!countyFeature) return;
-
-                const centroid = pathGenerator.centroid(countyFeature);
-                if (isNaN(centroid[0]) || isNaN(centroid[1])) return; // Skip if centroid invalid
-
-                mapAnnotationGroup.append("text")
-                    .attr("x", centroid[0] + 5) // Offset slightly
-                    .attr("y", centroid[1])
-                    .attr("text-anchor", "start")
-                    .style("font-size", "10px")
-                    .style("fill", "#333")
-                    .style("paint-order", "stroke") // Draw stroke behind fill
-                    .style("stroke", "white")
-                    .style("stroke-width", "2px")
-                    .style("stroke-linecap", "round")
-                    .style("stroke-linejoin", "round")
-                    .text(countyData.county);
-            });
-        }
-
         // Modified to accept showAnnotations parameter
-        function updateScatterplot(dataToShow, mode, showAnnotations) {
+        function updateScatterplot(showAnnotations) {
             if (!scatterSvg) return;
             scatterSvg.selectAll("g").remove(); // Clear previous elements except the main <g>
             annotationGroup = scatterSvg.append("g").attr("class", "scrolly-annotations").style("pointer-events", "none"); // Recreate group
 
-            currentYMode = mode;
+            currentYMode = 'total';
             x = d3.scaleLinear().domain([0, 100]).range([0, scatterWidth]);
-            if (mode === 'percentage') {
+            if (currentYMode === 'percentage') {
                  yMin = 0.01;
                  yMax = d3.max(countyData, d => d.affected_jobs_pct) || 100; 
                  y = d3.scaleLog().base(10).domain([yMin, yMax + (yMax * 0.1)]).range([scatterHeight, plotTopPadding]);
@@ -266,153 +238,171 @@ document.addEventListener('DOMContentLoaded', function() {
             const xAxis = d3.axisBottom(x).tickFormat(d => `${d}%`);
             scatterSvg.append("g").attr("class", "x-axis").attr("transform", `translate(0,${scatterHeight})`).call(xAxis).selectAll("text").style("font-size", "11px").style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
             let yAxisTicks, yAxisFormat;
-            if (mode === 'percentage') { yAxisTicks = [0.01, 0.1, 1, 10, 100]; yAxisFormat = d => d3.format(".2~f")(d) + "%"; }
+            if (currentYMode === 'percentage') { yAxisTicks = [0.01, 0.1, 1, 10, 100]; yAxisFormat = d => d3.format(".2~f")(d) + "%"; }
             else { yAxisTicks = [1, 10, 100, 1000, 10000, 50000]; yAxisFormat = d3.format(","); }
             const yAxis = d3.axisLeft(y).tickValues(yAxisTicks).tickFormat(yAxisFormat);
             scatterSvg.append("g").attr("class", "y-axis").call(yAxis).selectAll("text").style("font-size", "11px").style("fill", "#666").style("font-family", "'JetBrains Mono', monospace");
             scatterSvg.append("g").attr("class", "grid y-grid").call(d3.axisLeft(y).tickValues(yAxisTicks).tickSize(-scatterWidth).tickFormat("")).call(g => g.select(".domain").remove()).selectAll("line").style("stroke", "#e0e0e0").style("stroke-dasharray", "2,2");
 
             // Points (no changes needed)
-             scatterPoints = scatterSvg.append('g').selectAll("circle.dot").data(dataToShow, d => d.fips).join("circle").attr("class", "dot").attr("cx", d => x(d.trump_pct)).attr("cy", d => {const value = mode === 'percentage' ? d.affected_jobs_pct : d.total_jobs_affected_2024; const scaledValue = (mode === 'percentage' && value <= yMin) || (mode === 'total' && value === 0) ? yMin : value; return y(scaledValue); }).attr("r", 3).style("fill", scrolly_getPointColor).style("stroke", "none").style("opacity", 0.7);
+             scatterPoints = scatterSvg.append('g').selectAll("circle.dot").data(countyData, d => d.fips).join("circle").attr("class", "dot").attr("cx", d => x(d.trump_pct)).attr("cy", d => {const value = currentYMode === 'percentage' ? d.affected_jobs_pct : d.total_jobs_affected_2024; const scaledValue = (currentYMode === 'percentage' && value <= yMin) || (currentYMode === 'total' && value === 0) ? yMin : value; return y(scaledValue); }).attr("r", 3).style("fill", scrolly_getPointColor).style("stroke", "none").style("opacity", 0.7);
 
             // Conditionally draw annotations
             if (showAnnotations) {
                 const annotationData = { maxRed: topRedCounty, maxBlue: topBlueCounty }; // Use stored top counties
-                scrolly_drawScatterAnnotations(annotationData, mode, x, y);
+                scrolly_drawScatterAnnotations(annotationData, currentYMode, x, y);
             } else {
                  annotationGroup.selectAll("*").remove(); // Ensure removed if not shown
             }
         }
 
-        // Modified to handle display modes and highlights
-        function updateMap(displayMode, countiesToHighlightArray) {
-             if (!mapSvg || !usMapData || !countyData.length) return; 
-            
-             const highlightFipsSet = new Set(countiesToHighlightArray?.map(c => c.fips));
-             const highlightStateSet = new Set(countiesToHighlightArray?.map(c => c.state));
-             
-             // Remove previous map annotations
-             mapAnnotationGroup.selectAll("*").remove(); 
+        // REMOVE updateMap function - replaced by drawBaseMapAndBorders and drawMapOverlays
+        // function updateMap(displayMode, countiesToHighlightArray) { /* ... */ }
 
-             // Fit projection (only needs to happen once after data load, but safe here)
-             projection.fitSize([mapWidth, mapHeight], topojson.feature(usMapData, usMapData.objects.counties));
-             
-             // Update or draw map paths
-             mapPaths = mapSvg.selectAll("g.counties path.county") // Select within a group
-                 .data(topojson.feature(usMapData, usMapData.objects.counties).features, d => d.id)
-                 .join(
-                     enter => enter.append("path") // Append path within the group
-                         .attr("class", "county")
-                         .attr("stroke", "#ccc")
-                         .attr("stroke-width", 0.5)
-                         .each(function(d) { // Join data on enter
+        // --- NEW Drawing Functions --- 
+        function drawBaseMapAndBorders() {
+            if (!mapSvg || !usMapData || !countyData.length) return;
+            console.log("Drawing Base Map and Borders (ONCE)");
+
+            // Fit projection
+            projection.fitSize([mapWidth, mapHeight], topojson.feature(usMapData, usMapData.objects.counties));
+
+            // Draw Counties with Grayscale Fill
+            const countiesGroup = mapSvg.select("g.counties");
+            countiesGroup.selectAll("path.county")
+                .data(topojson.feature(usMapData, usMapData.objects.counties).features, d => d.id)
+                .join(
+                    enter => enter.append("path")
+                        .attr("class", "county")
+                        .attr("stroke", "#ccc")
+                        .attr("stroke-width", 0.5)
+                        .each(function(d) { 
                              const fips = d.id;
                              if (countyDataByFips[fips]) {
                                  d.properties = { ...d.properties, data: countyDataByFips[fips] };
                              }
                          }),
-                     update => update, // No special update needed here
-                     exit => exit.remove()
-                 )
-                 .attr("d", pathGenerator) // Update path data for all
-                 .transition().duration(300) // Animate fill change
-                 .attr("fill", d => {
+                    update => update, 
+                    exit => exit.remove()
+                )
+                .attr("d", pathGenerator)
+                .attr("fill", d => { // Apply grayscale fill here, ONE TIME
                     const countyProperties = d.properties?.data;
-                    if (!countyProperties) return "#eee"; // No data
-                    
-                    if (displayMode === 'valueShading') {
-                         if (!valueColorScale || mapColorMin === undefined) { 
-                             console.log("Scale or mapColorMin missing for county", d.id);
-                             return "#eee"; // Check scale and calculated min are ready
-                         }
-                         
-                         // EXACT COPY/Adaptation from tariffs_map_plot.js applyCountyStyles lines 670-674 (for yAxisMode == 'total')
-                         const value = countyProperties.total_jobs_affected_2024;
-                         const safeValue = (value > 0) ? value : mapColorMin; // If value > 0 use it, else use calculated mapColorMin
-                         const color = valueColorScale(safeValue); 
-
-                         // --- START DEBUG LOGGING (Conditional) ---
-                         if (value > 1 && (!color || color === "rgb(255, 255, 255)")) { // Log if high value gets white or fails
-                            console.log(`County ${d.id}: value=${value}, safeValue=${safeValue}, mapColorMin=${mapColorMin}, domain=${valueColorScale.domain()}, color=${color}`);
-                         } else if (value <= 0 && color !== "rgb(255, 255, 255)") { // Log if zero/min value is NOT white
-                             console.log(`County ${d.id} (Zero): safeValue=${safeValue}, mapColorMin=${mapColorMin}, domain=${valueColorScale.domain()}, color=${color}`);
-                         }
-                         // --- END DEBUG LOGGING --- 
-
-                         return color || "#eee"; // Fallback color
-                         // End Exact Copy/Adaptation
-
-                    } else if (displayMode === 'highlightBorders') {
-                        // Revert non-highlighted to standard light gray, highlighted slightly darker
-                        return highlightStateSet.has(countyProperties.state) ? "#d8d8d8" : "#eee"; // Use standard light gray
-                    } else {
-                         return "#eee"; // Default
-                    }
+                    if (!countyProperties) return "#eee"; 
+                    if (!valueColorScale || mapColorMin === undefined) { return "#eee"; }
+                    const value = countyProperties.total_jobs_affected_2024;
+                    const safeValue = (value > 0) ? value : mapColorMin; 
+                    const color = valueColorScale(safeValue); 
+                    return color || "#eee"; 
                  });
-                 
-             // Ensure parent group exists for paths
-             if (mapSvg.select("g.counties").empty()) {
-                 mapPaths.nodes().forEach(node => {
-                      if(node && node.parentNode && node.parentNode.nodeName !== 'g') {
-                         // This shouldn't happen with .join() if mapSvg exists, but as safety
-                         const g = mapSvg.insert('g', ':first-child').attr('class', 'counties');
-                         g.node().appendChild(node);
-                      } else if (node && !node.parentNode){ 
-                           // If node somehow detached, re-append (less likely)
-                           const g = mapSvg.select('g.counties'); 
-                           if(!g.empty()) g.node().appendChild(node);
-                      }
-                 });
-             } else {
-                  mapSvg.select("g.counties").selectAll("path.county")
-                      .data(topojson.feature(usMapData, usMapData.objects.counties).features, d => d.id)
-                      .join("path"); // Ensure join happens within the group
-             }
 
-            // Borders (State and Nation) - Redraw or ensure they exist
-             mapSvg.selectAll("path.state-borders, path.nation-border").remove(); // Clear old ones
-             mapSvg.append("path").datum(topojson.mesh(usMapData, usMapData.objects.states, (a, b) => a !== b)).attr("class", "state-borders").attr("fill", "none").attr("stroke", "#aaa").attr("stroke-width", 1).attr("d", pathGenerator);
-             mapSvg.append("path").datum(topojson.mesh(usMapData, usMapData.objects.nation)).attr("class", "nation-border").attr("fill", "none").attr("stroke", "#767b91").attr("stroke-width", 1).attr("d", pathGenerator);
+            // Draw Static State/Nation Borders
+            const staticBordersGroup = mapSvg.select("g.static-borders");
+            staticBordersGroup.selectAll("*").remove(); // Clear just in case
+            staticBordersGroup.append("path").datum(topojson.mesh(usMapData, usMapData.objects.states, (a, b) => a !== b)).attr("class", "state-borders").attr("fill", "none").attr("stroke", "#aaa").attr("stroke-width", 1).attr("d", pathGenerator);
+            staticBordersGroup.append("path").datum(topojson.mesh(usMapData, usMapData.objects.nation)).attr("class", "nation-border").attr("fill", "none").attr("stroke", "#767b91").attr("stroke-width", 1).attr("d", pathGenerator);
+        }
 
-            // State Highlight Border
-            let highlightBorderPathData = null;
-            if (displayMode === 'highlightBorders' && countiesToHighlightArray?.length > 0) {
-                 let featuresToDraw = stateFeatures.filter(f => highlightStateSet.has(f.properties.name));
-                 if(featuresToDraw.length > 0) {
-                    // Simple border for the first highlighted state found for now
-                    highlightBorderPathData = pathGenerator(featuresToDraw[0]);
-                 }
-            }
-            stateHighlightBorder.attr("d", highlightBorderPathData);
-            stateHighlightBorder.raise(); // Bring to front
+        function drawMapOverlays(countiesToHighlightArray) {
+            if (!mapSvg || !usMapData || !stateFeatures) return; 
+            console.log("Drawing Map Overlays");
             
-            // Draw Map Annotations if needed
-            if (displayMode === 'highlightBorders' && countiesToHighlightArray?.length > 0) {
-                scrolly_drawMapAnnotations(countiesToHighlightArray);
-            }
+            // Clear previous overlays first
+            clearMapOverlays();
+
+            if (!countiesToHighlightArray || countiesToHighlightArray.length === 0) return; // Exit if nothing to highlight
+
+            const highlightFipsSet = new Set(countiesToHighlightArray.map(c => c?.fips).filter(Boolean));
+            const highlightStateSet = new Set(countiesToHighlightArray.map(c => c?.state).filter(Boolean));
+
+            // Draw State Highlight Borders
+            let stateFeaturesToDraw = stateFeatures.filter(f => highlightStateSet.has(f.properties.name));
+            stateHighlightBorderGroup.selectAll("path.scrolly-state-highlight-border")
+                 .data(stateFeaturesToDraw).enter().append("path")
+                     .attr("class", "scrolly-state-highlight-border") 
+                     .attr("fill", "none").attr("stroke", "#2a324b")
+                     .attr("stroke-width", 1.5).style("pointer-events", "none")
+                     .attr("d", d => pathGenerator(d))
+                     .raise(); 
+
+            // Draw County Highlight Borders
+            const countyFeaturesToDraw = countiesToHighlightArray.map(countyData => {
+                return countyData ? topojson.feature(usMapData, usMapData.objects.counties).features.find(f => f.id === countyData.fips) : null;
+            }).filter(Boolean); 
+            countyHighlightGroup.selectAll("path.county-highlight-border")
+               .data(countyFeaturesToDraw).enter().append("path")
+                   .attr("class", "county-highlight-border") 
+                   .attr("d", d => pathGenerator(d))
+                   .raise(); 
+
+            // Draw Annotation Boxes and Lines
+            const boxWidth = 160; const boxHeight = 65;
+            countiesToHighlightArray.forEach((countyData, index) => {
+                if (!countyData) return;
+                const feature = countyFeaturesToDraw[index]; 
+                if (!feature) return;
+                const centroid = pathGenerator.centroid(feature);
+                if (isNaN(centroid[0]) || isNaN(centroid[1])) return;
+
+                let targetY, boxY, textContentHtml;
+                const boxX = (mapWidth / 2) - (boxWidth / 2);
+
+                if (countyData === topRedCounty) {
+                    targetY = mapHeight * 0.20; 
+                    boxY = targetY - boxHeight / 2; 
+                    textContentHtml = `<b>${topRedCounty?.county || 'N/A'}, ${topRedCounty?.state || 'N/A'} (Red)</b><br/>Total Jobs: ${scrolly_formatAnnotationValue(topRedCounty?.total_jobs_affected_2024, 'total')}<br/><i>Industries: Placeholder...</i>`;
+                } else if (countyData === topBlueCounty) {
+                    targetY = mapHeight * 0.80; 
+                    boxY = targetY - boxHeight / 2;
+                    textContentHtml = `<b>${topBlueCounty?.county || 'N/A'}, ${topBlueCounty?.state || 'N/A'} (Blue)</b><br/>Total Jobs: ${scrolly_formatAnnotationValue(topBlueCounty?.total_jobs_affected_2024, 'total')}<br/><i>Industries: Placeholder...</i>`;
+                } else { return; }
+                
+                boxY = Math.max(0, Math.min(mapHeight - boxHeight, boxY));
+                const lineTargetY = boxY + (countyData === topRedCounty ? 0 : boxHeight); 
+
+                if (Math.abs(centroid[1] - lineTargetY) > 5) { 
+                    annotationLineGroup.append("line")
+                        .attr("class", "annotation-line") 
+                        .attr("x1", centroid[0])
+                        .attr("y1", centroid[1])
+                        .attr("x2", centroid[0]) // Vertical line
+                        .attr("y2", lineTargetY); // Connect to target Y
+                }
+
+                const fo = mapAnnotationGroup.append("foreignObject")
+                    .attr("x", boxX)
+                    .attr("y", boxY)
+                    .attr("width", boxWidth)
+                    .attr("height", boxHeight);
+
+                fo.append("xhtml:div").attr("class", "map-annotation-box").html(textContentHtml);
+            });
+        }
+
+        function clearMapOverlays() {
+             console.log("Clearing Map Overlays");
+             stateHighlightBorderGroup.selectAll("*").remove();
+             countyHighlightGroup.selectAll("*").remove();
+             annotationLineGroup.selectAll("*").remove();
+             mapAnnotationGroup.selectAll("*").remove();
         }
 
         // --- Scene Handlers --- 
         function showScene1a() {
-            console.log("Showing Scene 1a");
-            updateScatterplot(countyData, currentYMode, false); // No scatter annotations
-            updateMap('valueShading', null); // Value shading, no highlights
-            mapTextAbove.classed('is-visible', false);
-            mapTextBelow.classed('is-visible', false);
+            console.log("Activating Scene 1a");
+            updateScatterplot(false); // No scatter annotations
+            clearMapOverlays(); // Remove borders, lines, map annotations
+            // Base map fill remains untouched
         }
 
         function showScene1b() {
-            console.log("Showing Scene 1b");
-             const highlightCounties = [topRedCounty, topBlueCounty].filter(Boolean); // Get stored counties
+            console.log("Activating Scene 1b");
+             scrolly_findMaxCounties(countyData, currentYMode); 
+             const highlightCounties = [topRedCounty, topBlueCounty].filter(Boolean); 
             
-            updateScatterplot(countyData, currentYMode, true); // SHOW scatter annotations
-            updateMap('highlightBorders', highlightCounties); // Highlight borders + map annotations
-
-            // Update and show text above/below map
-            const textAboveContent = `Counties with highest total affected jobs:<br/><b>Red:</b> ${topRedCounty?.county || 'N/A'}, ${topRedCounty?.state || 'N/A'}<br/><b>Blue:</b> ${topBlueCounty?.county || 'N/A'}, ${topBlueCounty?.state || 'N/A'}`;
-            const textBelowContent = `<b>${topRedCounty?.county || 'N/A'} Industries:</b> Placeholder... <br/> <b>${topBlueCounty?.county || 'N/A'} Industries:</b> Placeholder...`;
-            mapTextAbove.html(textAboveContent).classed('is-visible', true);
-            mapTextBelow.html(textBelowContent).classed('is-visible', true);
+            updateScatterplot(true); // Show scatter annotations
+            drawMapOverlays(highlightCounties); // Draw borders, lines, map annotations
+            // Base map fill remains untouched
         }
 
         // --- Public Methods --- 
@@ -420,7 +410,6 @@ document.addEventListener('DOMContentLoaded', function() {
             init: function() {
                 setupContainers(); 
 
-                // Chain promises instead of Promise.all for better error isolation
                 d3.csv('data/tariffs_industries_votes_county.csv')
                     .then(csvData => {
                         console.log("CSV data loaded.");
@@ -445,16 +434,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         // This line should now be safe if validation passes
                         stateFeatures = topojson.feature(usMapData, usMapData.objects.states).features;
                         
-                        // Pre-calculate top counties (total mode)
-                        scrolly_findMaxCounties(countyData, 'total'); 
-                        
                         // Setup color scale now that data is loaded
                         setupColorScale(); 
                         
-                        // DEBUG LOG: Check state before first draw
+                        // DRAW BASE MAP AND BORDERS (ONCE)
+                        drawBaseMapAndBorders(); 
+
                         console.log(`Before initial showScene1a: mapColorMin=${mapColorMin}, valueColorScale defined=${!!valueColorScale}`);
 
-                        // Initial draw reflects Scene 1a
+                        // Initial setup reflects Scene 1a (just ensures overlays are clear)
                         showScene1a(); 
 
                         console.log("Scrolly viz initialized and showing Scene 1a.");
